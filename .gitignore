@@ -3,3 +3,5 @@ CMakeFiles
 cmake_install.cmake
 Makefile
 bin
+G__BCSint.cxx
+libBCS*
