@@ -5,8 +5,7 @@ rm -rf CMakeFiles
 rm cmake_install.cmake
 rm Makefile
 rm -rf bin
+rm -rf lib
 
-rm G__BCSint.cxx
-rm libBCS*
 
 
