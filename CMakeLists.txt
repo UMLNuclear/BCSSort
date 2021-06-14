@@ -16,13 +16,13 @@ include_directories(${ROOT_INCLUDE_DIRS})
 
 #set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib GLOBAL)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_INSTALL_LIBDIR ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_INSTALL_LIBDIR ${CMAKE_BINARY_DIR}/lib)                       # .so file. 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 
-ROOT_GENERATE_DICTIONARY(G__BCSint BCSint.h LINKDEF ${CMAKE_BINARY_DIR}/libraries/BCSint/LinkDef.h)
-add_library(BCSint SHARED G__BCSint.cxx libraries/BCSint/BCSint.cxx)
-target_link_libraries(BCSint PUBLIC ${ROOT_LIBRARIES}) 
+ROOT_GENERATE_DICTIONARY(G__BCSint BCSint.h LINKDEF ${CMAKE_BINARY_DIR}/libraries/BCSint/LinkDef.h)   #create .cxx of root dictionary 
+add_library(BCSint SHARED G__BCSint.cxx libraries/BCSint/BCSint.cxx)                                    # compile .cxx root dictionary => .o file; "SHARED" = gonna create .so rather than .a file
+target_link_libraries(BCSint PUBLIC ${ROOT_LIBRARIES})                                                  # link all libraries => .so file
 
 add_executable(bcssort src/bcssort.cxx) 
 
