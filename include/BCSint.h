@@ -12,6 +12,8 @@ class BCSint : public TRint {
   static BCSint *fInstance;
   BCSint(const char *app="bcssort",int *argc=0,char **argv=0,void *options=0,int numOptions=0,bool noLogo=true);
 
+  ClassDef(BCSint,0)
+
 };
 
 #endif

@@ -20,8 +20,8 @@ set(CMAKE_INSTALL_LIBDIR ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 
-ROOT_GENERATE_DICTIONARY(G__BCSint BCSint.h LINKDEF ${CMAKE_BINARY_DIR}/libraries/BCSint/LinkDef.h)
-add_library(BCSint SHARED G__BCSint.cxx libraries/BCSint/BCSint.cxx)
+ROOT_GENERATE_DICTIONARY(G__BCSint BCSint.h BCSintFunctions.h LINKDEF ${CMAKE_BINARY_DIR}/libraries/BCSint/LinkDef.h)
+add_library(BCSint SHARED G__BCSint.cxx libraries/BCSint/BCSint.cxx libraries/BCSint/BCSintFunctions.cxx)
 target_link_libraries(BCSint PUBLIC ${ROOT_LIBRARIES}) 
 
 add_executable(bcssort src/bcssort.cxx) 

@@ -6,4 +6,6 @@
 
 #pragma link C++ class BCSint+;
 
+#pragma link C++ function SendHelp;
+
 #endif
