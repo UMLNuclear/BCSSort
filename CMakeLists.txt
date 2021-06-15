@@ -22,11 +22,24 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 ROOT_GENERATE_DICTIONARY(G__BCSint BCSint.h BCSintFunctions.h LINKDEF ${CMAKE_BINARY_DIR}/libraries/BCSint/LinkDef.h)   #create .cxx of root dictionary 
 add_library(BCSint SHARED G__BCSint.cxx libraries/BCSint/BCSint.cxx libraries/BCSint/BCSintFunctions.cxx)               # compile .cxx root dictionary => .o file; "SHARED" = gonna create .so rather than .a file
-target_link_libraries(BCSint PUBLIC ${ROOT_LIBRARIES})                      # link all libraries => .so file  
+target_link_libraries(BCSint PUBLIC ${ROOT_LIBRARIES})                                                                  # link all libraries => .so file  
+
+
+ROOT_GENERATE_DICTIONARY(G__BCSUtil TChannel.h LINKDEF ${CMAKE_BINARY_DIR}/libraries/Util/LinkDef.h)   
+add_library(BCSUtil SHARED G__BCSUtil.cxx libraries/Util/TChannel.cxx)               
+target_link_libraries(BCSUtil PUBLIC ${ROOT_LIBRARIES})                                                                  
+
+
+ROOT_GENERATE_DICTIONARY(G__DDAS DDASEvent.h DDASHit.h ddaschannel.h  LINKDEF ${CMAKE_BINARY_DIR}/libraries/DDAS/LinkDef.h)   
+FILE(GLOB DDASSources libraries/DDAS/*.cxx)
+add_library(DDAS SHARED G__DDAS.cxx ${DDASSources})               
+target_link_libraries(DDAS PUBLIC ${ROOT_LIBRARIES})                                                                  
+
+
 
 add_executable(bcssort src/bcssort.cxx) 
 
-target_link_libraries(bcssort ${ROOT_LIBRARIES} BCSint)
+target_link_libraries(bcssort ${ROOT_LIBRARIES} BCSint BCSUtil DDAS)
 
 
 
