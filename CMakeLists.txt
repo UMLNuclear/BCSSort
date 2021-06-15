@@ -35,11 +35,14 @@ FILE(GLOB DDASSources libraries/DDAS/*.cxx)
 add_library(DDAS SHARED G__DDAS.cxx ${DDASSources})               
 target_link_libraries(DDAS PUBLIC ${ROOT_LIBRARIES})                                                                  
 
+ROOT_GENERATE_DICTIONARY(G__JUNK junk.h LINKDEF ${CMAKE_BINARY_DIR}/libraries/junk/LinkDef.h)   
+add_library(Junk SHARED G__JUNK.cxx libraries/junk/junk.cxx)               
+target_link_libraries(Junk PUBLIC ${ROOT_LIBRARIES})                                                                  
 
 
 add_executable(bcssort src/bcssort.cxx) 
 
-target_link_libraries(bcssort ${ROOT_LIBRARIES} BCSint BCSUtil DDAS)
+target_link_libraries(bcssort ${ROOT_LIBRARIES} BCSint BCSUtil DDAS Junk)
 
 
 
