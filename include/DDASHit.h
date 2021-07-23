@@ -6,6 +6,7 @@
 #include <vector>
 #include <cstdint>
 
+//#include <TObject.h>
 
 namespace DAQ {
   namespace DDAS {
@@ -239,6 +240,8 @@ namespace DAQ {
         void appendTraceSample(uint16_t value);
         void setExternalTimestamp(uint64_t tstamp);
         void setADCOverflowUnderflow(bool state);
+
+        //ClassDef(DDASHit,1)
     };
   } // end DDAS namespace
 } // end DAQ namespace

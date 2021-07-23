@@ -7,11 +7,13 @@
 #include <stdint.h>
 #include "TObject.h"
 
-namespace DAQ {
-  namespace DDAS {
-    class DDASHit;
-  }
-}
+#include "TChannel.h"
+
+//namespace DAQ {
+//  namespace DDAS {
+//    class DDASHit;
+//  }
+//}
 
 /*!  \brief Encapsulation of a generic DDAS event
 *
@@ -117,7 +119,7 @@ public:
    *
    * \param hit   the hit to copy
    */
-  ddaschannel& operator=(DAQ::DDAS::DDASHit& hit);
+  //ddaschannel& operator=(DAQ::DDAS::DDASHit& hit);
 
   /*! \brief Destructor  */
   ~ddaschannel();
@@ -147,7 +149,7 @@ public:
   ///////////// Data accessors
   
   /*! \brief Retrieve the energy  */
-  UInt_t GetEnergy() const {return energy;}
+  UInt_t Energy() const {return energy;}
 
   /*! \brief Retrieve most significant 16-bits of raw timestamp */
   UInt_t GetTimeHigh() const {return timehigh;}
@@ -252,9 +254,32 @@ public:
     return address;
   } 
 
+  TChannel *GetChannel() const {
+    TChannel *c = TChannel::GetChannel(GetAddress());
+    return c;
+  }   
+
+  double GetEnergy() const {
+    double energy = GetChannel()->CalEnergy(static_cast<int>(Energy()));
+    return energy;
+  }
+
+  double GetCalTime() const {
+    double t =  GetCoarseTime();
+    double time = GetChannel()->CalTime(t);
+    return time;
+  }
+
+  int GetNumber() const {
+    int chan_number = GetChannel()->GetNumber();
+    return chan_number;
+  }
+
   void Print(Option_t *opt="") const { 
-    printf("chan @ 0x%llx: crate[%i] slot[%02i] channel[%02i]  energy[%i]\n",
-            (unsigned long long)GetTime(),GetCrateID(),GetSlotID(),GetChannelID(),GetEnergy());
+    //printf("chan @ %lu: crate[%i] slot[%02i] channel[%02i]  charge[%i]  energy[%.01f]\n",
+    //        (unsigned long)GetTime(),GetCrateID(),GetSlotID(),GetChannelID(),Energy(),GetEnergy());
+    printf("chan @ %lu: crate[%i] slot[%02i] channel[%02i] charge[%i] number[%i]\n",
+            (unsigned long)GetTime(),GetCrateID(),GetSlotID(),GetChannelID(),Energy(),GetNumber());
  
   }
 

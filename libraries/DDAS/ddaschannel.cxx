@@ -4,12 +4,13 @@
 /*****************************************/
 
 #include "ddaschannel.h"
-#include "DDASHit.h"
-#include "DDASHitUnpacker.h"
-#include "DDASBitMasks.h"
+//#include "DDASHit.h"
+//#include "DDASHitUnpacker.h"
+//#include "DDASBitMasks.h"
 #include <iostream>
 #include <limits>
 #include <tuple>
+
 
 using namespace std;
 
@@ -17,10 +18,10 @@ ClassImp(ddaschannel);
 
 // Avoid the static initialization order fiasco with construct
 // on first use idiom ( see https://isocpp.org/wiki/faq/ctors#static-init-order-on-first-use)
-DAQ::DDAS::DDASHit& getStaticHit() {
-  static DAQ::DDAS::DDASHit* pHit = new DAQ::DDAS::DDASHit;
-  return *pHit;
-}
+//DAQ::DDAS::DDASHit& getStaticHit() {
+//  static DAQ::DDAS::DDASHit* pHit = new DAQ::DDAS::DDASHit;
+//  return *pHit;
+//}
 
 
 ddaschannel::ddaschannel() : TObject() {
@@ -61,7 +62,7 @@ ddaschannel::ddaschannel() : TObject() {
   m_adcOverUnderflow = false;
 }
 
-
+/*
 ddaschannel& ddaschannel::operator=(DAQ::DDAS::DDASHit& hit)
 {
   time                = hit.GetTime();
@@ -94,7 +95,7 @@ ddaschannel& ddaschannel::operator=(DAQ::DDAS::DDASHit& hit)
 
   return *this;
 }
-
+*/
 
 
 void ddaschannel::Reset() {
@@ -142,20 +143,21 @@ ddaschannel::~ddaschannel() {
 
 void ddaschannel::UnpackChannelData(const uint32_t *data)
 {
-  using namespace DAQ::DDAS;
+  //using namespace DAQ::DDAS;
 
-  DDASHitUnpacker unpacker;
+  //DDASHitUnpacker unpacker;
 
-  DDASHit&  hit = getStaticHit();
-  hit.Reset();
+  //DDASHit&  hit = getStaticHit();
+  //hit.Reset();
 
-  size_t nShorts = *data;
-  unpacker.unpack(data, 
-                  data + nShorts*sizeof(uint32_t)/sizeof(uint16_t),
-                  hit); 
+  //size_t nShorts = *data;
+  //unpacker.unpack(data, 
+  //                data + nShorts*sizeof(uint32_t)/sizeof(uint16_t),
+  //                hit); 
 
   // copy the state
-  *this = hit;
+  //*this = hit;
 }
+
 
 
