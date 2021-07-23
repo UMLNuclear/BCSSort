@@ -3,7 +3,13 @@ CMakeFiles
 cmake_install.cmake
 Makefile
 bin
-G__BCSint.cxx
+G__*
 libBCS*
 .*swp
 .*swo
+*.pcm
+*.d
+*.so
+*.root
+*.txt
+lib
