@@ -49,6 +49,7 @@ class BCSEvent {
     double Pin1T() const; 
     double Pin2E() const; 
     double Pin2T() const; 
+    double I2S() const; 
 
     int HGFSize() const;
     int HGBSize() const;

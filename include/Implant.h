@@ -112,7 +112,7 @@ class Decay{
         int GeSize() const { return fGe.size(); }
         void SimplePrint(double) const;
 
-        void SetImplantTime(double impt) {fImplantTime = impt;}
+        void SetImplantTime(double impt) {fImplantTime = impt;}//pin1.t - fh.t
         //bool Stopped() const {return !fSSSD.size(); } 
 
         double GetTimestamp() const {
@@ -160,7 +160,7 @@ class Clover{
 
 
 
-        std::vector<double> AddbackSum(TCutG *gate) const;
+        std::vector<double> AddbackSum(TCutG *gate) const;   // for summing
 
         void SetAddE(double e=-1){
             if(e<0){

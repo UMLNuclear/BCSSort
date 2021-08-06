@@ -14,10 +14,10 @@
 
 #include <globals.h>
 
-TChain *gChain = new TChain("dchan");
+//TChain *gChain = new TChain("dchan");
+TChain *gChain = new TChain("event");
+//TChain *gChain = new TChain("beta");
 TList  *gCuts  = new TList();
-
-
 
 
 BCSint *BCSint::fInstance=0;

@@ -12,4 +12,5 @@ libBCS*
 *.so
 *.root
 *.txt
+*.out
 lib

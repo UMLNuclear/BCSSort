@@ -58,14 +58,23 @@ ROOT_GENERATE_DICTIONARY(G__OUTPUTMANAGER OutputManager.h LINKDEF ${CMAKE_BINARY
 add_library(OutputManager SHARED G__OUTPUTMANAGER.cxx libraries/OutputManager/OutputManager.cxx)               
 target_link_libraries(OutputManager PUBLIC ${ROOT_LIBRARIES})                                                                  
 
+ROOT_GENERATE_DICTIONARY(G__GROOT 
+                         GH1D.h 
+                         GCanvas.h 
+                         LINKDEF ${CMAKE_BINARY_DIR}/libraries/GROOT/LinkDef.h)   
+add_library(GROOT SHARED G__GROOT.cxx 
+            libraries/GROOT/GH1D.cxx
+            libraries/GROOT/GCanvas.cxx
+           )               
+target_link_libraries(GROOT PUBLIC ${ROOT_LIBRARIES})                                                                  
+
 ROOT_GENERATE_DICTIONARY(G__JUNK junk.h LINKDEF ${CMAKE_BINARY_DIR}/libraries/junk/LinkDef.h)   
 add_library(Junk SHARED G__JUNK.cxx libraries/junk/junk.cxx)               
 target_link_libraries(Junk PUBLIC ${ROOT_LIBRARIES})                                                                  
 
-
 add_executable(bcssort src/bcssort.cxx) 
 
-target_link_libraries(bcssort ${ROOT_LIBRARIES} BCSint BCSUtil DDAS HIT Correlator OutputManager Junk)
+target_link_libraries(bcssort ${ROOT_LIBRARIES} BCSint BCSUtil DDAS HIT Correlator OutputManager GROOT Junk)
 
 
 

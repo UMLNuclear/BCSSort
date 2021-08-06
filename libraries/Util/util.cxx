@@ -23,73 +23,6 @@
 
 TList *gList = new TList;
 
-//void ReadDetMap(std::string filename) {
-void ReadDetMap(const char* filename,Option_t *opt) {
-
-  std::string infilename = filename;
-
-  std::ifstream infile;
-  std::string line;
-  //infile.open("detmap.txt");
-  infile.open(infilename.c_str());
-  while(getline(infile,line)) {
-    //printf("%s\n",line.c_str());
-    int address;
-    int crate;
-    int slot;
-    int chan;
-    std::string name;
-    int number;
-    int segment;
-    double offset;
-    double gain;
-    double quad;
-    double time;
-
-    if(line.length()<1) continue;
-    if(line[0]=='#') continue;
-    if(line[0]==' ') continue;
-    if(line[0]=='\t') continue;
-    std::stringstream ss(line);
-    ss << std::hex;
-    ss >> address;
-
-    ss << std::dec;
-    ss >> crate;
-    ss >> slot;
-    ss >> chan;
-    ss >> name;
-    ss >> number;
-    ss >> segment;
-    ss >> offset;
-    ss >> gain;
-    ss >> quad;
-    ss >> time;
-
-    TChannel *c = new TChannel(name.c_str()); //TChannel::GetChannel(address);
-    //c->SetName(name.c_str());
-    c->SetAddress(address);
-    c->SetNumber(number);
-    c->SetSegment(segment);
-    std::vector<double> output;
-    output.push_back(offset);
-    output.push_back(gain);
-    //if(number>=192 || number <=206) {
-    output.push_back(quad);
-    //}
-    c->SetEnergyCoeff(output);
-
-    std::vector<double> time_coeff;
-    time_coeff.push_back(time);
-    time_coeff.push_back(1.00000);
-
-    c->SetTimeCoeff(time_coeff);
-
-    TChannel::AddChannel(c);
-  }
-  printf("channels read: %i\n",TChannel::Size());
-
-}
 
 
 std::string GetRunNumber(std::string input) {
@@ -129,6 +62,12 @@ void ProgressUpdate(long x, long n, bool end) {
   }
 }
 
+
+void FillHistogram(std::string hname,TCutG *cut1, TCutG *cut2, int xbins, double xlow, double xhigh, double xvalue,
+                                      int ybins, double ylow, double yhigh, double yvalue) {
+    std::string newname = Form("%s_%s_%s",hname.c_str(),cut1->GetName(),cut2->GetName());
+    FillHistogram(newname,xbins,xlow,xhigh,xvalue, ybins,ylow,yhigh,yvalue);
+}
 
 void FillHistogram(std::string hname,TCutG *cut,int xbins, double xlow, double xhigh, double xvalue,
                                       int ybins, double ylow, double yhigh, double yvalue) {

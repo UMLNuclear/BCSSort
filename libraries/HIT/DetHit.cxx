@@ -53,6 +53,7 @@ double BCSEvent::Pin1E() const  { for(auto &it : fHits) { if(it.GetNumber()==181
 double BCSEvent::Pin1T() const  { for(auto &it : fHits) { if(it.GetNumber()==181) return it.GetTimestamp(); } return -1; }
 double BCSEvent::Pin2E() const  { for(auto &it : fHits) { if(it.GetNumber()==182) return it.GetCharge();    } return -1; }
 double BCSEvent::Pin2T() const  { for(auto &it : fHits) { if(it.GetNumber()==182) return it.GetTimestamp(); } return -1; }
+double BCSEvent::I2S() const  { for(auto &it : fHits) { if(it.GetNumber()==177) return it.GetCharge(); } return -1; }
 
 
 int BCSEvent::HGFSize() const {  int count=0; for(auto &it : fHits) { if(Range(it.GetNumber(),0,39))    count++; } return count; }

@@ -142,41 +142,6 @@ void Implant::Print() const{
 }
 
 
-//printf("------------------------\n");
-//printf("Implant @ %f\n",fPIN1T);
-//printf("\tpin1 energy:\t%f\n",fPIN1E);
-//printf("\tpin2 energy:\t%f\n",fPIN2E);
-//printf("\t%lu front strips fired\n",fDSSDFront.size());  
-//printf("\t%lu back strips fired\n",fDSSDBack.size());  
-//if(fSSSD.size()>0)
-//    printf("Impant punched through the SSSD!!!\n");
-//
-//// judge implant
-////TCutG*isotope=0;
-//TFile *mycut = TFile::Open("~/notebooks/Ne31/Ne31_1030/DetHit/mycut_isotopes.root");
-//TCutG *f26 = (TCutG*)mycut->Get("f26");
-//TCutG *f27 = (TCutG*)mycut->Get("f27");
-//TCutG *ne27 = (TCutG*)mycut->Get("ne27");
-//TCutG *ne28 = (TCutG*)mycut->Get("ne28");
-//TCutG *ne29 = (TCutG*)mycut->Get("ne29");
-//TCutG *na28 = (TCutG*)mycut->Get("na28");
-//TCutG *na29 = (TCutG*)mycut->Get("na29");
-//TCutG *na30 = (TCutG*)mycut->Get("na30");
-////if (FrontSize()>0 && BackSize() && Stopped()){
-//if (FrontSize()>0 && BackSize()){
-//    if (f26->IsInside(fI2S,fPIN1E)) {printf("fluorine26 \n");}
-//    else if (f27->IsInside(fI2S,fPIN1E)) {printf("fluorine27 \n");}
-//    else if (ne27->IsInside(fI2S,fPIN1E)) {printf("neon27 \n");}
-//    else if (ne28->IsInside(fI2S,fPIN1E)) {printf("neon28 \n");}
-//    else if (ne29->IsInside(fI2S,fPIN1E)) {printf("neon29 \n");}
-//    else if (na28->IsInside(fI2S,fPIN1E)) {printf("sodium28 \n");}
-//    else if (na29->IsInside(fI2S,fPIN1E)) {printf("sodium29 \n");}
-//    else if (na30->IsInside(fI2S,fPIN1E)) {printf("sodium30 \n");}
-//    else {printf("not an isotope \n");}    
-//}
-//
-//printf("------------------------\n");
-//
 
 void Implant::PrintFun(TCutG *mycut) const {
     if(!mycut) printf("no TCutG\n");
