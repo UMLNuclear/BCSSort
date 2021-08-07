@@ -27,7 +27,8 @@ class BCSint : public TRint {
 
     //void OpenRootFile(std::string fname); 
 
-    void DoSort();
+    void DoSort(); // organize data
+    void TOFfluctuation(); // check tof fluctuation of each event file.
 
     int UpdateFileCount() { fFileCount++; return fFileCount-1; }
 

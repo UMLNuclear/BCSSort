@@ -17,12 +17,12 @@ BCSOptions::~BCSOptions() { }
 
 
 void BCSOptions::Init() { //TODO make it read these from a file.
-  fSortAndQuit = false;
-  fWriteTree   = true;
-  fWriteEventTree   = true;
-  //fSortAndQuit = true;
-  //fWriteTree   = false;
-  //fWriteEventTree   = false;
+  //fSortAndQuit = false;
+  //fWriteTree   = true;
+  //fWriteEventTree   = true;
+  fSortAndQuit = true;
+  fWriteTree   = false;
+  fWriteEventTree   = false;
 
 }
 

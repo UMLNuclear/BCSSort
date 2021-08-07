@@ -13,7 +13,7 @@
 int main(int argc, char **argv){
 
   BCSint *bcs = BCSint::Get();
-  
+
   DDASEvent junk1; // trying to force root to load libraries
 
   for(int i=1;i<argc;i++) {
@@ -25,8 +25,9 @@ int main(int argc, char **argv){
   }
 
   if(BCSOptions::Get()->SortAndQuit()==true) {
-    bcs->DoSort();
-   bcs->Terminate(0);
+    //bcs->DoSort();
+    bcs->TOFfluctuation();
+    bcs->Terminate(0);
   } else {
     bcs->Run(false);
   }
