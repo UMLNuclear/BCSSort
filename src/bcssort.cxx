@@ -25,8 +25,9 @@ int main(int argc, char **argv){
   }
 
   if(BCSOptions::Get()->SortAndQuit()==true) {
-    //bcs->DoSort();
-    bcs->TOFfluctuation();
+    //bcs->DoSort(); // organize data from run.file to correlated beta.file
+    //bcs->TOFfluctuation(); // get TH2D about TOF fluctuation as runtime;
+    bcs->CorrectTOF(); // Correct TOF fluctuation. Require tof.root exist;
     bcs->Terminate(0);
   } else {
     bcs->Run(false);

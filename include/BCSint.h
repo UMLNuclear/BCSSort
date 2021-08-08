@@ -29,6 +29,7 @@ class BCSint : public TRint {
 
     void DoSort(); // organize data
     void TOFfluctuation(); // check tof fluctuation of each event file.
+    void CorrectTOF();
 
     int UpdateFileCount() { fFileCount++; return fFileCount-1; }
 
