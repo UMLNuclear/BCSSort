@@ -96,13 +96,21 @@ void FillHistogram(std::string hname,int xbins, double xlow, double xhigh, doubl
 }
 
 
-void SaveHistograms(std::string fname) {
+void SaveHistograms(std::string fname, Option_t *opt) {
   if(!gList) {
     printf("no histograms to save!\n");
     return;
   }
+  TString sopt(opt);
+  sopt.ToLower();
   TDirectory *current = gDirectory;
-  TFile *file = new TFile(fname.c_str(),"recreate");
+  TFile *file;
+  if(sopt.Length()==0 || sopt.Contains("recreate")){
+    file = new TFile(fname.c_str(),"recreate");
+  }
+  if(sopt.Contains("update")){
+    file = new TFile(fname.c_str(),"update");
+  }
   gList->Sort();
   gList->Write();
   file->Close();

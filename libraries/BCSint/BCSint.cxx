@@ -144,14 +144,16 @@ void BCSint::TOFfluctuation(){
 
   long x = 0;
   long n = gChain->GetEntries();
-  
+  double first_time = -1;
+  double runtime;
+  double tof;
   for(x=0;x<n;x++){
     gChain->GetEntry(x);
+    if(first_time<0) first_time = fevent->Pin1T();
     if(fevent->I2S()>0){
-      //for(auto &it1 : fevent->fHits){
-        //FillHistogram("TOF", 3600,0,3600,it1.GetTimestamp()/1e9, 3000,0,30000,fevent->I2S());
-        FillHistogram("TOF", 3600,0,3600,fevent->fHits[0].GetTimestamp()/1e9, 3000,0,30000,fevent->I2S());
-      //}
+        runtime = (fevent->Pin1T()-first_time)/1e9;
+        tof = fevent->I2S();
+        FillHistogram("tof", 3800,0,3800,runtime, 1600,0,32000,tof);
     }
     if((x%50000)==0){
       printf("  on entry %lu / %lu \r",x,n);
@@ -165,6 +167,39 @@ void BCSint::TOFfluctuation(){
 
 }
 
+/*void BCSint::CorrectTOF(){
+  
+  std::string num = GetRunNumber(gROOT->GetListOfFiles()->At(0)->GetName());
+  TFile corf = TFile::Open()
+
+
+
+  BCSEvent *fevent = new BCSEvent;
+  gChain->SetBranchAddress("BCSEvent", &fevent);
+  TChannel::ReadDetMapFile();
+
+  long x = 0;
+  long n = gChain->GetEntries();
+  double first_time = -1;
+  double runtime;
+  double ctof;
+  for(x=0;x<n;x++){
+    gChain->GetEntry(x);
+    if(first_time<0) first_time = fevent->Pin1T();
+    if(fevent->I2S()>0){
+        runtime = (fevent->Pin1T()-first_time)/1e9;
+        FillHistogram("TOF", 3600,0,3600,runtime, 3000,0,30000,fevent->I2S());
+    }
+    if((x%50000)==0){
+      printf("  on entry %lu / %lu \r",x,n);
+      fflush(stdout);
+    }
+  }
+
+  printf("  on entry %lu / %lu  \n",x,n);
+  SaveHistograms(Form("tof%s.root",num.c_str()));
+
+}*/
 
 
 
