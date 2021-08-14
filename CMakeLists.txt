@@ -54,6 +54,10 @@ ROOT_GENERATE_DICTIONARY(G__CORRELATOR Correlator.h LINKDEF ${CMAKE_BINARY_DIR}/
 add_library(Correlator SHARED G__CORRELATOR.cxx libraries/Correlator/Correlator.cxx)               
 target_link_libraries(Correlator PUBLIC ${ROOT_LIBRARIES})                                                                  
 
+ROOT_GENERATE_DICTIONARY(G__TOFCORRECTION TOFCorrection.h LINKDEF ${CMAKE_BINARY_DIR}/libraries/TOFFluctuation/LinkDef.h)   
+add_library(TOFCorrection SHARED G__TOFCORRECTION.cxx libraries/TOFFluctuation/TOFCorrection.cxx)               
+target_link_libraries(TOFCorrection PUBLIC ${ROOT_LIBRARIES})                                                                  
+
 ROOT_GENERATE_DICTIONARY(G__OUTPUTMANAGER OutputManager.h LINKDEF ${CMAKE_BINARY_DIR}/libraries/OutputManager/LinkDef.h)   
 add_library(OutputManager SHARED G__OUTPUTMANAGER.cxx libraries/OutputManager/OutputManager.cxx)               
 target_link_libraries(OutputManager PUBLIC ${ROOT_LIBRARIES})                                                                  

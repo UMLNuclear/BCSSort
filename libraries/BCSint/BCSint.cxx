@@ -181,7 +181,11 @@ void BCSint::CorrectTOF(){
   
   TFile *corf = TFile::Open(Form("tof%s.root",num.c_str()));
   TH2D *hist = (TH2D *)corf->Get(Form("tof%s",num.c_str()));
-  if(hist==NULL){
+  if(hist==NULL){ //"NULL" = exist;
+    printf("histogram does not exist\n");
+    return;
+  }
+  if((hist->Integral())<10){
     printf("histogram is empty\n");
     return;
   }
