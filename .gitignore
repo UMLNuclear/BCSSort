@@ -13,4 +13,5 @@ libBCS*
 *.root
 *.txt
 *.out
+*.dat
 lib
