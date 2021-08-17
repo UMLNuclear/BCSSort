@@ -5,6 +5,7 @@
 
 #include <TObject.h>
 #include <map>
+#include <string>
 
 #include <globals.h>
 
@@ -36,7 +37,6 @@ class Correlator : public TObject{
     void CleanImplantMap(double T);
     void FlushPixel(pixel pix, bool histogram=true);
     void FlushAll(bool histogram=true);
-
   
   ClassDef(Correlator,0)
 

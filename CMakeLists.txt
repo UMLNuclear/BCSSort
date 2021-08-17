@@ -78,7 +78,7 @@ target_link_libraries(Junk PUBLIC ${ROOT_LIBRARIES})
 
 add_executable(bcssort src/bcssort.cxx) 
 
-target_link_libraries(bcssort ${ROOT_LIBRARIES} BCSint BCSUtil DDAS HIT Correlator OutputManager GROOT Junk)
+target_link_libraries(bcssort ${ROOT_LIBRARIES} BCSint BCSUtil DDAS HIT Correlator OutputManager GROOT TOFCorrection Junk)
 
 
 

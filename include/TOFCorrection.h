@@ -16,6 +16,7 @@ class TOFCorrection {
     
     void Fluctuation();
     void Correct();
+    std::vector<double> ReadFile(int num, std::string infilename = "/home/zhu/packages/BCSSort/TOFParameters.txt");
 
   ClassDef(TOFCorrection,0)
 

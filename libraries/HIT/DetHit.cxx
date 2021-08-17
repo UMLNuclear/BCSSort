@@ -60,7 +60,7 @@ int BCSEvent::HGFSize() const {  int count=0; for(auto &it : fHits) { if(Range(i
 int BCSEvent::HGBSize() const {  int count=0; for(auto &it : fHits) { if(Range(it.GetNumber(),80,119))  count++; } return count; }
 int BCSEvent::LGFSize() const {  int count=0; for(auto &it : fHits) { if(Range(it.GetNumber(),40,79))   count++; } return count; }
 int BCSEvent::LGBSize() const {  int count=0; for(auto &it : fHits) { if(Range(it.GetNumber(),120,159)) count++; } return count; }
-
+int BCSEvent::SSSDSize() const {  int count=0; for(auto &it : fHits) { if(Range(it.GetNumber(),160,175)) count++; } return count; }
 
 
 

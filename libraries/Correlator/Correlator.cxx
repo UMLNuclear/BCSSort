@@ -1,3 +1,10 @@
+#include <string>
+#include <cstdio>
+#include <map>
+#include <sstream>
+#include <fstream>
+#include <iostream>
+#include <cfloat>
 
 #include <BCSint.h>
 #include <Correlator.h>
@@ -5,9 +12,6 @@
 #include <Implant.h>
 #include <util.h>
 #include <OutputManager.h>
-
-#include <iostream>
-#include <cfloat>
 
 #include <globals.h>
 
@@ -34,7 +38,7 @@ void Correlator::AddEvent(std::vector<DetHit> *event) {
   bool pin1=false;
   for(auto &it : *event) {
     if(it.GetNumber()==181) {  
-      pin1=true; break;
+      pin1=true; continue;// change break to continue
     }
   }
   if(pin1) { 

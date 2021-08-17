@@ -55,7 +55,7 @@ class BCSEvent {
     int HGBSize() const;
     int LGFSize() const;
     int LGBSize() const;
-
+    int SSSDSize() const;
 
     int  Size() const { return fHits.size(); }
     void Clear() { fHits.clear(); }
