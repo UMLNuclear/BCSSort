@@ -19,11 +19,13 @@
 #include <Correlator.h>
 #include <util.h>
 #include <OutputManager.h>
+#include <TOFCorrection.h>
 
 #include <globals.h>
 
+TChain *gChain = new TChain("hit_tree");
 //TChain *gChain = new TChain("dchan");
-TChain *gChain = new TChain("event");
+//TChain *gChain = new TChain("event");
 //TChain *gChain = new TChain("beta");
 TList  *gCuts  = new TList();
 
@@ -91,14 +93,13 @@ void BCSint::DoSort() {
   gChain->SetBranchAddress("ddasevent",&event);
 
   long nentries = gChain->GetEntries();
-  //nentries = 1e6;
+  nentries = 1e3;
   long x = 0;
 
   if(gChain->GetCurrentFile()) {
     OutputManager::Get()->Set(GetRunNumber(gChain->GetCurrentFile()->GetName()));
     std::cout << "created output tree file: " << OutputManager::Get()->GetName() << std::endl;
   }
-
 
   double starttime = 0;
   double buildtime = BUILDTIME;
@@ -110,17 +111,12 @@ void BCSint::DoSort() {
     for(size_t y=0;y<event->GetNEvents();y++) {
       chan = event->GetData()[y];          
       DetHit hit(chan);
-      //std::cout << "===  Start ===" << std::endl;
       FillHistogram("Summary",16000,0,16000,hit.GetEnergy(),300,0,300,hit.GetNumber());
       FillHistogram("Summary_raw",16000,0,16000,hit.GetCharge(),300,0,300,hit.GetNumber());
-      //hit.print();
-      //std::cout << "dt = " << hit.GetTimestamp() << " - " << starttime << " = " <<  hit.GetTimestamp()-starttime <<std::endl << std::endl;
-      //if(  hit.GetTimestamp()-starttime < 0) exit(0);
       if((hit.GetTimestamp()-starttime)>buildtime){
         Correlator::Get()->AddEvent(vec_hit);
         starttime = hit.GetTimestamp();
         vec_hit->clear();
-        //std::cout << " End Correlator->AddEvent " << std::endl << std::endl;
       }
       vec_hit->push_back(hit);
     }
@@ -135,6 +131,7 @@ void BCSint::DoSort() {
 
   if(gList && gROOT->GetListOfFiles()->GetSize()>0) {
     std::string num = GetRunNumber(gROOT->GetListOfFiles()->At(0)->GetName());
+    num = num.substr(0,4);
     SaveHistograms(Form("output%s.root",num.c_str())); // saves any histograms to output.root, will over write EVER time.
   }
 
@@ -143,7 +140,66 @@ void BCSint::DoSort() {
 }
 
 
+//=======================Fill List.file After TOFCorrection================//
+void BCSint::ListSort(){ 
+  LoadCuts();
+  DDASEvent *event  = new DDASEvent;
+  ddaschannel *chan = new ddaschannel;
 
+  gChain->SetBranchAddress("ddasevent",&event);
+
+  long nentries = gChain->GetEntries();
+  //nentries = 1e3;
+  long x = 0;
+
+  TChannel::ReadDetMapFile();
+  std::vector<double> tofpara;
+  if(gChain->GetCurrentFile()) {
+    std::string runnum = GetRunNumber(gChain->GetCurrentFile()->GetName());
+//================= TOFCorrection Paras Read================//
+    runnum = runnum.substr(0,4);
+    tofpara = TOFCorrection::Get()->ReadFile(std::stoi(runnum));
+//=========================================================//
+    OutputManager::Get()->Set(runnum);
+    //OutputManager::Get()->Set(GetRunNumber(gChain->GetCurrentFile()->GetName()));
+    //std::cout << "created output tree file: " << OutputManager::Get()->GetName() << std::endl;
+    std::cout << "created output tree file: " << runnum << std::endl;
+  }
+  //printf("%f : %f :%f\n", tofpara[0], tofpara[1], tofpara[2]);
+  if(tofpara.empty()) return;
+  for(x=0;x<nentries;x++) {
+    gChain->GetEntry(x);
+    for(size_t y=0;y<event->GetNEvents();y++) {
+      chan = event->GetData()[y];          
+      DetHit *hit = new DetHit(chan);
+      if(hit->GetNumber()==177){
+        //printf("old tof = %f\n",hit->GetCharge());
+        double i2s = hit->GetCharge();
+        i2s = tofpara[0]+tofpara[1]*i2s+tofpara[2]*i2s*i2s;
+        hit->SetCharge(i2s);
+        //printf("new tof = %f  \n\n",hit->GetCharge());
+      }
+      //if(hit->GetNumber()==180) printf("I2S_I2N = %f\n\n", hit->GetCharge());
+      OutputManager::Get()->FillList(hit);
+         
+      FillHistogram("Summary",16000,0,16000,hit->GetEnergy(),300,0,300,hit->GetNumber());
+      FillHistogram("Summary_raw",16000,0,16000,hit->GetCharge(),300,0,300,hit->GetNumber());
+    }
+    if((x%50000)==0){
+      printf("  on entry %lu / %lu            \r", x,nentries);
+      fflush(stdout);
+    } 
+  }
+  printf("  on entry %lu / %lu            \n", x,nentries);
+
+
+  if(gList && gROOT->GetListOfFiles()->GetSize()>0) {
+    std::string num = GetRunNumber(gROOT->GetListOfFiles()->At(0)->GetName());
+    num = num.substr(0,4);
+    SaveHistograms(Form("list_output%s.root",num.c_str())); // saves any histograms to output.root, will over write EVER time.
+  }
+  OutputManager::Get()->Close();
+}
 
 
 

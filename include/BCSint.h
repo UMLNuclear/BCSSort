@@ -27,11 +27,9 @@ class BCSint : public TRint {
 
     //void OpenRootFile(std::string fname); 
 
-    void DoSort(); // organize data
+    void DoSort(); // organize data: dchan->beta & event;
+    void ListSort(); // organize data: dchan->DetHit
     
-    void TOFfluctuation(); // check tof fluctuation of each event file.
-    void CorrectTOF();
-    std::vector<double> ReadFile(int num, std::string infilename = "/home/zhu/packages/BCSSort/TOFParameters.txt");    
 
     int UpdateFileCount() { fFileCount++; return fFileCount-1; }
 

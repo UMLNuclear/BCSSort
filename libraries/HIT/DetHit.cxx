@@ -54,13 +54,22 @@ double BCSEvent::Pin1T() const  { for(auto &it : fHits) { if(it.GetNumber()==181
 double BCSEvent::Pin2E() const  { for(auto &it : fHits) { if(it.GetNumber()==182) return it.GetCharge();    } return -1; }
 double BCSEvent::Pin2T() const  { for(auto &it : fHits) { if(it.GetNumber()==182) return it.GetTimestamp(); } return -1; }
 double BCSEvent::I2S() const  { for(auto &it : fHits) { if(it.GetNumber()==177) return it.GetCharge(); } return -1; }
+double BCSEvent::I2S_I2N() const  { for(auto &it : fHits) { if(it.GetNumber()==180) return it.GetCharge(); } return -1; }
 
 
 int BCSEvent::HGFSize() const {  int count=0; for(auto &it : fHits) { if(Range(it.GetNumber(),0,39))    count++; } return count; }
 int BCSEvent::HGBSize() const {  int count=0; for(auto &it : fHits) { if(Range(it.GetNumber(),80,119))  count++; } return count; }
 int BCSEvent::LGFSize() const {  int count=0; for(auto &it : fHits) { if(Range(it.GetNumber(),40,79))   count++; } return count; }
 int BCSEvent::LGBSize() const {  int count=0; for(auto &it : fHits) { if(Range(it.GetNumber(),120,159)) count++; } return count; }
-int BCSEvent::SSSDSize() const {  int count=0; for(auto &it : fHits) { if(Range(it.GetNumber(),160,175)) count++; } return count; }
+int BCSEvent::SSSDSize() const {  
+  int count=0; 
+  for(auto &it : fHits) { 
+    if(Range(it.GetNumber(),160,175)){
+      if(it.GetCharge()>100) count++; 
+    }  
+  } 
+  return count; 
+}
 
 
 

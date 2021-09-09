@@ -19,7 +19,7 @@ class DetHit{
     void print();/* {
         cout<<number <<"\t"<< energy <<"\t"<< timestamp<<endl;
     }*/
-   
+    void SetCharge(double c) {charge = c;}   
     int GetAddress()   const { return address; }
     int GetNumber()    const { return number; }
     double GetCharge()    const { return charge; }
@@ -27,7 +27,7 @@ class DetHit{
 
  
     double GetEnergy() const;
-
+    
 
   private:    
     int address;
@@ -50,6 +50,7 @@ class BCSEvent {
     double Pin2E() const; 
     double Pin2T() const; 
     double I2S() const; 
+    double I2S_I2N() const; 
 
     int HGFSize() const;
     int HGBSize() const;

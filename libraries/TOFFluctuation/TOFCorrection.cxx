@@ -16,7 +16,7 @@
 #include <TOFCorrection.h>
 #include <DetHit.h>
 #include <BCSint.h>
-
+#include <ddaschannel.h>
 
 
 //TChain *gChain = new TChain("event");
@@ -36,8 +36,9 @@ TOFCorrection::TOFCorrection(){}
 
 TOFCorrection::~TOFCorrection(){}
 
-std::vector<double> TOFCorrection::ReadFile(int num, std::string filename){
 
+//========================= Read File ==========================//
+std::vector<double> TOFCorrection::ReadFile(int num, std::string filename){
   std::vector<double> tofpara; 
   std::ifstream infile;
   std::string line;
@@ -66,7 +67,7 @@ std::vector<double> TOFCorrection::ReadFile(int num, std::string filename){
   return tofpara;
 }
 
-
+//============================= Get Fluctuation TH2D =========================//
 void TOFCorrection::Fluctuation(){
   std::string runnum = GetRunNumber(gROOT->GetListOfFiles()->At(0)->GetName());
   std::string num = runnum.substr(0,4);
@@ -98,6 +99,11 @@ void TOFCorrection::Fluctuation(){
   SaveHistograms(Form("tof%s.root", num.c_str()));
 }
 
+//========================== Correct TOF by old TH2D ===================//
+//Require: TOF Fluctuation TH2D(before correction) must exist
+//If no fit parameters, comment out all related "ctof2" and "tofpara"
+
+
 void TOFCorrection::Correct(){
 
   
@@ -111,11 +117,14 @@ void TOFCorrection::Correct(){
     printf("histogram does not exist\n");
     return;
   }
-  if((hist->Integral())<10){
+  if((hist->Integral())<10){ //hist is not empty
     printf("histogram is empty\n");
     return;
   }
   std::vector<double> tofpara = ReadFile(std::stoi(num));
+  if(tofpara.empty()) return;
+
+
   TProfile *pfx = hist->ProfileX();
   TSpline3 *sp3 = new TSpline3(pfx);
   TF1 px("px","pol1");
@@ -125,8 +134,6 @@ void TOFCorrection::Correct(){
   BCSEvent *fevent = new BCSEvent;
   gChain->SetBranchAddress("BCSEvent", &fevent);
   TChannel::ReadDetMapFile();
-  TH2D *pid = new TH2D("pid_ctof","pid_ctof",2e3,0,2e4, 8e3,0,8e3);
-  TH2D *pid2 = new TH2D("pid_newctof","pid_newctof",2e3,0,2e4, 8e3,0,8e3);
   long x = 0;
   long n = gChain->GetEntries();
   double first_time = -1;
@@ -142,10 +149,6 @@ void TOFCorrection::Correct(){
         ctof2 = tofpara[0]+tofpara[1]*ctof+tofpara[2]*ctof*ctof;
         FillHistogram(Form("ctof%s", num.c_str()), 3600,0,3600,runtime, 3000,0,30000,ctof);
         FillHistogram(Form("newctof%s",num.c_str()), 3600,0,3600,runtime, 3000,0,30000,ctof2);
-        if(fevent->SSSDSize()==0){
-          pid->Fill(ctof, fevent->Pin1E());      
-          pid2->Fill(ctof2, fevent->Pin1E());
-        }      
     }
     if((x%50000)==0){
       printf("  on entry %lu / %lu \r",x,n);
@@ -155,17 +158,5 @@ void TOFCorrection::Correct(){
 
   printf("  on entry %lu / %lu  \n",x,n);
   SaveHistograms(Form("newctof%s.root",num.c_str()));
-  TFile *newf = new TFile(Form("PID_TOF%s.root", num.c_str()),"recreate");
-  pid->Write(); 
-  pid2->Write(); 
-  newf->Close();
 }
-
-
-
-
-
-
-
-
 

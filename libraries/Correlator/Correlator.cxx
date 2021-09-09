@@ -35,6 +35,9 @@ Correlator::~Correlator() { }
 
 void Correlator::AddEvent(std::vector<DetHit> *event) {
   OutputManager::Get()->FillEvent(event);
+  for(auto &it1 : *event){
+    FillHistogram("chan_sum", 8e3,0,16e3,it1.GetCharge(), 300,0,300,it1.GetNumber());
+  }
   bool pin1=false;
   for(auto &it : *event) {
     if(it.GetNumber()==181) {  

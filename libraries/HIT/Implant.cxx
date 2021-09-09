@@ -78,6 +78,11 @@ void Implant::Set(std::vector<DetHit> *hits){
                 fI2N = hitt.GetCharge();
                 fI2NT = hitt.GetTimestamp();
                 break;
+            
+            case 180:
+                fI2S_I2N = hitt.GetCharge();
+                fI2S_I2N_T = hitt.GetTimestamp();
+                break;
 
             case 181:
                 fPIN1E = hitt.GetCharge();

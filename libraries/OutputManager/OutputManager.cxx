@@ -12,7 +12,7 @@
 OutputManager *OutputManager::fOutputManager =0;
 
 
-OutputManager::OutputManager() : fFile(0), fTree(0), fBeta(0), fEventFile(0), fEventTree(0), fEvent(0) { } 
+OutputManager::OutputManager() : fFile(0), fTree(0), fBeta(0), fEventFile(0), fEventTree(0), fEvent(0), fListFile(0) ,fHitTree(0), fHit(0){ } 
 
 OutputManager::~OutputManager() { }
 
@@ -51,6 +51,18 @@ void OutputManager::Set(std::string runnumber) {
     current->cd();
 
   }
+  if(BCSOptions::Get()->WriteListTree()) {
+    TDirectory * current = gDirectory; 
+    
+    fListFile = new TFile(Form("list%s.root",runnumber.c_str()),"recreate");
+    fHitTree = new TTree("hit_tree","hit tree");
+    fHitTree->SetDirectory(fListFile);
+    fHit  = new DetHit;
+    fHitTree->Branch("DetHit",&fHit);  
+   
+    current->cd();
+
+  }
   return;
 }
 
@@ -70,6 +82,7 @@ void OutputManager::Fill(Implant *implant,std::vector<Decay> *vdec) {
 
 
 void OutputManager::FillEvent(std::vector<DetHit> *hits) {
+  if(!BCSOptions::Get()->WriteEventTree()) return;
 
   fEvent->fHits = *hits;
   fEventTree->Fill();
@@ -77,6 +90,13 @@ void OutputManager::FillEvent(std::vector<DetHit> *hits) {
 
 }
 
+void OutputManager::FillList(DetHit *hit) {
+  //if(!BCSOptions::Get()->WriteListTree()) return;
+
+  fHit = hit;
+  fHitTree->Fill();
+
+}
 
 void OutputManager::Close() {
   //if(!BCSOptions::Get()->WriteTree()) return;
@@ -95,8 +115,17 @@ void OutputManager::Close() {
     fEventTree->Write();
     fEventFile->Close();
     current->cd();
-
   }
+  if(BCSOptions::Get()->WriteListTree()) {
+    if(!fListFile || !fHitTree) return;
+    TDirectory * current = gDirectory; 
+    fListFile->cd();
+    fHitTree->Write();
+    fListFile->Close();
+    current->cd();
+  }
+
+
   return;
 }
 

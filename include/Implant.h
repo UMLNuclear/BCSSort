@@ -83,6 +83,9 @@ class Implant{
         double fI2NT;
         double fI2ST;
 
+        double fI2S_I2N;
+        double fI2S_I2N_T;
+
         std::vector<DetHit> fDSSDFront;
         std::vector<DetHit> fDSSDBack;
 
