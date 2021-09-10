@@ -78,21 +78,21 @@ void eventsort(){
   for(x=0;x<n;x++){
     gChain->GetEntry(x);
     if(fevent->I2S()>0 && fevent->Pin1E()>0){
-      FillHistogram("pid",3e3,0,3e4,fevent->I2S(), 
-                          8e3,0,2e4,fevent->Pin1E());
+      FillHistogram("pid",2e3,0,2e4,fevent->I2S(), 
+                          8e3,0,8e3,fevent->Pin1E());
       if(fevent->SSSDSize()==0) {
-        FillHistogram("pid_nosssd",3e3,0,3e4,fevent->I2S(), 
-                                    8e3,0,2e4,fevent->Pin1E());
+        FillHistogram("pid_nosssd",2e3,0,2e4,fevent->I2S(), 
+                                    8e3,0,8e3,fevent->Pin1E());
       }
     }
-    if(fevent->I2S()>0 && fevent->I2S_I2N()>0){
-      FillHistogram("momentum",3e3,0,3e4,fevent->I2S(), 
-                                3e3,0,3e4,fevent->I2S_I2N());
-      if(fevent->SSSDSize()==0) {
-        FillHistogram("momentum_nosssd",3e3,0,3e4,fevent->I2S(), 
-                                    3e3,0,3e4,fevent->I2S_I2N());
-      } 
-    }
+    //if(fevent->I2S()>0 && fevent->I2S_I2N()>0){
+    //  FillHistogram("momentum",3e3,0,3e4,fevent->I2S(), 
+    //                            3e3,0,3e4,fevent->I2S_I2N());
+    //  if(fevent->SSSDSize()==0) {
+    //    FillHistogram("momentum_nosssd",3e3,0,3e4,fevent->I2S(), 
+    //                                3e3,0,3e4,fevent->I2S_I2N());
+    //  } 
+    //}
     
 
     if((x%50000)==0){
@@ -101,6 +101,6 @@ void eventsort(){
     }
   }
   printf("    on entry %lu / %lu   \n",x,n);
-  SaveHistograms("eventoutput1020.root");
+  SaveHistograms("eventoutput1031.root");
   return;
 }

@@ -2,6 +2,7 @@
 #include <OutputManager.h>
 
 #include <iostream>
+#include <cstdio>
 
 #include <TFile.h>
 #include <TTree.h>
@@ -12,7 +13,7 @@
 OutputManager *OutputManager::fOutputManager =0;
 
 
-OutputManager::OutputManager() : fFile(0), fTree(0), fBeta(0), fEventFile(0), fEventTree(0), fEvent(0), fListFile(0) ,fHitTree(0), fHit(0){ } 
+OutputManager::OutputManager() : fFile(0), fTree(0), fBeta(0), fEventFile(0), fEventTree(0), fEvent(0), fListFile(0) ,fListTree(0), faddress(0), fnumber(0), ftimestamp(0), fcharge(0){ } 
 
 OutputManager::~OutputManager() { }
 
@@ -32,10 +33,10 @@ void OutputManager::Set(std::string runnumber) {
     TDirectory * current = gDirectory; 
     
     fFile = new TFile(Form("beta%s.root",runnumber.c_str()),"recreate");
-    fTree = new TTree("beta","beta tree");
-    fTree->SetDirectory(fFile);
+    fListTree = new TTree("beta","beta tree");
+    fListTree->SetDirectory(fFile);
     fBeta = new Beta;
-    fTree->Branch("Beta",&fBeta);  
+    fListTree->Branch("Beta",&fBeta);  
    
     current->cd();
   }
@@ -55,10 +56,18 @@ void OutputManager::Set(std::string runnumber) {
     TDirectory * current = gDirectory; 
     
     fListFile = new TFile(Form("list%s.root",runnumber.c_str()),"recreate");
-    fHitTree = new TTree("hit_tree","hit tree");
-    fHitTree->SetDirectory(fListFile);
-    fHit  = new DetHit;
-    fHitTree->Branch("DetHit",&fHit);  
+    fListTree = new TTree("tree","tree");
+    fListTree->SetDirectory(fListFile);
+    //fHit  = new DetHit;
+    //fListTree->Branch("DetHit",&fHit);
+    //faddress = new int;
+    //fnumber = new int;
+    //ftimestamp = new double;
+    //fcharge = new double;
+    fListTree->Branch("address",    &faddress,    "address/I");  
+    fListTree->Branch("number",     &fnumber,     "number/I");  
+    fListTree->Branch("timestamp",  &ftimestamp,  "timestamp/D");  
+    fListTree->Branch("charge",     &fcharge,     "energy/D");  
    
     current->cd();
 
@@ -74,7 +83,7 @@ void OutputManager::Fill(Implant *implant,std::vector<Decay> *vdec) {
   //fFile->cd();
   fBeta->Set(*implant, *vdec);
   //fBeta->SimplePrint();
-  fTree->Fill();
+  fListTree->Fill();
   fBeta->Clear();
 
   //current->cd();
@@ -90,21 +99,24 @@ void OutputManager::FillEvent(std::vector<DetHit> *hits) {
 
 }
 
-void OutputManager::FillList(DetHit *hit) {
+void OutputManager::FillList(int address, int number, double timestamp, double charge) {
   //if(!BCSOptions::Get()->WriteListTree()) return;
 
-  fHit = hit;
-  fHitTree->Fill();
+   faddress   = address;
+   fnumber    = number;
+   ftimestamp = timestamp;
+   fcharge    = charge;
+   fListTree->Fill();
 
 }
 
 void OutputManager::Close() {
   //if(!BCSOptions::Get()->WriteTree()) return;
   if(BCSOptions::Get()->WriteTree()) {
-    if(!fFile || !fTree) return;
+    if(!fFile || !fListTree) return;
     TDirectory * current = gDirectory; 
     fFile->cd();
-    fTree->Write();
+    fListTree->Write();
     fFile->Close();
     current->cd();
   }
@@ -117,10 +129,10 @@ void OutputManager::Close() {
     current->cd();
   }
   if(BCSOptions::Get()->WriteListTree()) {
-    if(!fListFile || !fHitTree) return;
+    if(!fListFile || !fListTree) return;
     TDirectory * current = gDirectory; 
     fListFile->cd();
-    fHitTree->Write();
+    fListTree->Write();
     fListFile->Close();
     current->cd();
   }

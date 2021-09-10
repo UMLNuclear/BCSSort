@@ -27,7 +27,8 @@ class OutputManager : public TObject {
     void Set(std::string runnumber);
     void Fill(Implant *implant,std::vector<Decay> *vdec);
     void FillEvent(std::vector<DetHit> *hits);
-    void FillList(DetHit *hit);
+    //void FillList(DetHit *hit);
+    void FillList(int address, int number, double timestamp, double charge);
     void Close();
 
     const char *GetName() const;
@@ -44,8 +45,12 @@ class OutputManager : public TObject {
 
 
     TFile *fListFile;
-    TTree *fHitTree;
-    DetHit  *fHit;
+    TTree *fListTree;
+    //DetHit  *fHit;
+    int faddress;
+    int fnumber;
+    double ftimestamp;
+    double fcharge;
 
   ClassDef(OutputManager,0)
 };

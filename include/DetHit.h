@@ -19,6 +19,9 @@ class DetHit{
     void print();/* {
         cout<<number <<"\t"<< energy <<"\t"<< timestamp<<endl;
     }*/
+    void SetAddress(int c) {address = c;}   
+    void SetNumber(int c) {number = c;}   
+    void SetTimestamp(double c) {timestamp = c;}   
     void SetCharge(double c) {charge = c;}   
     int GetAddress()   const { return address; }
     int GetNumber()    const { return number; }

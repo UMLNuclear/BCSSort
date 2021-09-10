@@ -23,9 +23,9 @@
 
 #include <globals.h>
 
-TChain *gChain = new TChain("hit_tree");
+//TChain *gChain = new TChain("tree");
 //TChain *gChain = new TChain("dchan");
-//TChain *gChain = new TChain("event");
+TChain *gChain = new TChain("event");
 //TChain *gChain = new TChain("beta");
 TList  *gCuts  = new TList();
 
@@ -171,19 +171,18 @@ void BCSint::ListSort(){
     gChain->GetEntry(x);
     for(size_t y=0;y<event->GetNEvents();y++) {
       chan = event->GetData()[y];          
-      DetHit *hit = new DetHit(chan);
-      if(hit->GetNumber()==177){
-        //printf("old tof = %f\n",hit->GetCharge());
-        double i2s = hit->GetCharge();
-        i2s = tofpara[0]+tofpara[1]*i2s+tofpara[2]*i2s*i2s;
-        hit->SetCharge(i2s);
-        //printf("new tof = %f  \n\n",hit->GetCharge());
+      //DetHit *hit = new DetHit(chan);
+      int address      = chan->GetAddress();
+      int number       = chan->GetNumber();
+      double timestamp = chan->GetCoarseTime();
+      double charge    = chan->GetEnergy();
+      if(number==177){
+        charge = tofpara[0]+tofpara[1]*charge+tofpara[2]*charge*charge;
       }
-      //if(hit->GetNumber()==180) printf("I2S_I2N = %f\n\n", hit->GetCharge());
-      OutputManager::Get()->FillList(hit);
+      OutputManager::Get()->FillList(address, number, timestamp, charge);
          
-      FillHistogram("Summary",16000,0,16000,hit->GetEnergy(),300,0,300,hit->GetNumber());
-      FillHistogram("Summary_raw",16000,0,16000,hit->GetCharge(),300,0,300,hit->GetNumber());
+      //FillHistogram("Summary",16000,0,16000,hit->GetEnergy(),300,0,300,hit->GetNumber());
+      //FillHistogram("Summary_raw",16000,0,16000,hit->GetCharge(),300,0,300,hit->GetNumber());
     }
     if((x%50000)==0){
       printf("  on entry %lu / %lu            \r", x,nentries);
@@ -193,11 +192,11 @@ void BCSint::ListSort(){
   printf("  on entry %lu / %lu            \n", x,nentries);
 
 
-  if(gList && gROOT->GetListOfFiles()->GetSize()>0) {
-    std::string num = GetRunNumber(gROOT->GetListOfFiles()->At(0)->GetName());
-    num = num.substr(0,4);
-    SaveHistograms(Form("list_output%s.root",num.c_str())); // saves any histograms to output.root, will over write EVER time.
-  }
+  //if(gList && gROOT->GetListOfFiles()->GetSize()>0) {
+  //  std::string num = GetRunNumber(gROOT->GetListOfFiles()->At(0)->GetName());
+  //  num = num.substr(0,4);
+  //  SaveHistograms(Form("list_output%s.root",num.c_str())); // saves any histograms to output.root, will over write EVER time.
+  //}
   OutputManager::Get()->Close();
 }
 
