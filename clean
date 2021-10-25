@@ -7,5 +7,5 @@ rm Makefile
 rm -rf bin
 rm -rf lib
 
-rm -f G__*
+rm -f G_cxx/G__*
 

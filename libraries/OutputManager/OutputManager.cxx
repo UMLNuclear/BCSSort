@@ -78,7 +78,7 @@ void OutputManager::Set(std::string runnumber) {
 
 void OutputManager::Fill(Implant *implant,std::vector<Decay> *vdec) {
   if(!BCSOptions::Get()->WriteTree()) return;
-  
+ 
   //TDirectory * current = gDirectory; 
   //fFile->cd();
   fBeta->Set(*implant, *vdec);

@@ -23,9 +23,9 @@ void OpenRootFile(std::string fname) {
   TFile *f= (TFile*)gROOT->GetListOfFiles()->Last();
   //BCSint::Get()->ProcessLine(Form("f = %s;",rfile.c_str()));
   //std::cout << f->GetName() << std::endl;
-  //if(f->FindObjectAny("dchan")) {
+  if(f->FindObjectAny("dchan")) {
   //if(f->FindObjectAny("tree")) {
-  if(f->FindObjectAny("event")) {
+  //if(f->FindObjectAny("event")) {
   //if(f->FindObjectAny("beta")) {
     gChain->Add(fname.c_str());
   }
@@ -34,6 +34,7 @@ void OpenRootFile(std::string fname) {
 
 void LoadCuts() {
     TFile *mycut = TFile::Open("~zhu/notebooks/Ne31/Time_Correlation/mynewcuts.root");
+    //TFile *mycut = TFile::Open("/home/zhu/packages/BCSSort/root_file/cuts/mom_cut_Ne.root");
     TIter keys (mycut->GetListOfKeys());
     while(TKey *key = (TKey*)keys.Next()) {
         gCuts->Add(key->ReadObj());

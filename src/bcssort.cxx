@@ -4,9 +4,13 @@
 #include <util.h>
 
 #include <TH1D.h>
+
+#include <DetHit.h>
 #include <BCSint.h>
 #include <BCSintFunctions.h>
 #include <TOFCorrection.h>
+#include <Histogram.h>
+#include <Correlator.h>
 
 #include <DDASEvent.h>
 #include <BCSOptions.h>
@@ -26,9 +30,9 @@ int main(int argc, char **argv){
   }
 
   if(BCSOptions::Get()->SortAndQuit()==true) {
-    //bcs->DoSort(); // organize data from run.file to correlated beta.file
-    bcs->ListSort(); // organize data from run.file to list.file after TOF Correction.
-    //TOFCorrection::Get()->Correct();
+    bcs->DoSort(); // organize data from run.file to correlated beta.file
+    //bcs->ListSort();
+    //Histogram::Get()->BetaSort();
     bcs->Terminate(0);
   } else {
     bcs->Run(false);

@@ -26,7 +26,7 @@
 TOFCorrection *TOFCorrection::fTOFCorrection = 0;
 
 TOFCorrection *TOFCorrection::Get(){
-  if(fTOFCorrection){
+  if(!fTOFCorrection){
     fTOFCorrection = new TOFCorrection;
   }
   return fTOFCorrection;
@@ -39,6 +39,7 @@ TOFCorrection::~TOFCorrection(){}
 
 //========================= Read File ==========================//
 std::vector<double> TOFCorrection::ReadFile(int num, std::string filename){
+  printf("Read File TOFParameters/n");
   std::vector<double> tofpara; 
   std::ifstream infile;
   std::string line;
@@ -80,14 +81,19 @@ void TOFCorrection::Fluctuation(){
   long n = gChain->GetEntries();
   double first_time = -1;
   double runtime;
-  double tof;
+  double tof, i2n_i2s, pin1_i2n;
   for(x=0;x<n;x++){
     gChain->GetEntry(x);
     if(first_time<0) first_time = fevent->Pin1T();
-    if(fevent->I2S()>0){
+    if(fevent->I2N_I2S()>0){
       runtime = (fevent->Pin1T()-first_time)/1e9;
-      tof = fevent->I2S();
-      FillHistogram(Form("tof%s",num.c_str()), 3800,0,3800,runtime, 1600,0,32000,tof);
+      i2n_i2s = fevent->I2N_I2S();
+      FillHistogram(Form("i2n_i2s%s",num.c_str()), 3800,0,3800,runtime, 1600,0,32000,i2n_i2s);
+    }
+    if(fevent->PIN1_I2N()>0){
+      runtime = (fevent->Pin1T()-first_time)/1e9;
+      pin1_i2n = fevent->PIN1_I2N();
+      FillHistogram(Form("pin1_i2n%s",num.c_str()), 3800,0,3800,runtime, 1600,0,32000,pin1_i2n);
     }
     if((x%50000)==0){
       printf("  on entry %lu / %lu \r",x,n);
@@ -96,7 +102,7 @@ void TOFCorrection::Fluctuation(){
   }
 
   printf("  on entry %lu / %lu  \n",x,n);
-  SaveHistograms(Form("tof%s.root", num.c_str()));
+  SaveHistograms(Form("i2n%s.root", num.c_str()));
 }
 
 //========================== Correct TOF by old TH2D ===================//

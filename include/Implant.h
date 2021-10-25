@@ -78,7 +78,7 @@ class Implant{
         double fPIN2T;
 
         double fI2N;
-        double fI2S;
+        double fI2S;  //TODO: Function to call i2s after tof fluctuation correction;
 
         double fI2NT;
         double fI2ST;
@@ -90,6 +90,8 @@ class Implant{
         std::vector<DetHit> fDSSDBack;
 
         std::vector<DetHit> fSSSD;
+    
+
 
         ClassDef(Implant,1);
 };
@@ -115,7 +117,7 @@ class Decay{
         int GeSize() const { return fGe.size(); }
         void SimplePrint(double) const;
 
-        void SetImplantTime(double impt) {fImplantTime = impt;}//pin1.t - fh.t
+        void SetImplantTime(double impt) {fImplantTime = impt;}//pin1.t - fh.t, unit:ms
         //bool Stopped() const {return !fSSSD.size(); } 
 
         double GetTimestamp() const {

@@ -1,7 +1,7 @@
 #ifndef DetHit_H
 #define DetHit_H
 #include <TObject.h>
-
+#include <TH2.h>
 
 class ddaschannel;
 
@@ -52,8 +52,16 @@ class BCSEvent {
     double Pin1T() const; 
     double Pin2E() const; 
     double Pin2T() const; 
-    double I2S() const; 
-    double I2S_I2N() const; 
+    double Pin3E() const; 
+    double Pin3T() const; 
+    double I2S() const; //pin1_i2s 
+    double PIN1_I2N() const; //pin1_i2n 
+    double I2N_I2S() const; 
+
+    std::vector<DetHit> LGF() const;
+    std::vector<DetHit> LGB() const;
+    std::vector<DetHit> HGF() const;
+    std::vector<DetHit> HGB() const;
 
     int HGFSize() const;
     int HGBSize() const;
@@ -63,8 +71,14 @@ class BCSEvent {
 
     int  Size() const { return fHits.size(); }
     void Clear() { fHits.clear(); }
+    
+    int LGPixel() const;
+    std::pair<int,int> HGPixel() const;
+
+    TH2D *DrawHG(Option_t *opt="") const;
 
     bool Range(int x,int low, int high) const { return (x>=low && x<=high); }
+    void PrintNumber();
 
   //private:
  

@@ -24,8 +24,8 @@
 #include <globals.h>
 
 //TChain *gChain = new TChain("tree");
-//TChain *gChain = new TChain("dchan");
-TChain *gChain = new TChain("event");
+TChain *gChain = new TChain("dchan");
+//TChain *gChain = new TChain("event");
 //TChain *gChain = new TChain("beta");
 TList  *gCuts  = new TList();
 
@@ -93,7 +93,7 @@ void BCSint::DoSort() {
   gChain->SetBranchAddress("ddasevent",&event);
 
   long nentries = gChain->GetEntries();
-  nentries = 1e3;
+  //nentries = 1e5;
   long x = 0;
 
   if(gChain->GetCurrentFile()) {
@@ -129,11 +129,11 @@ void BCSint::DoSort() {
   printf("  on entry %lu / %lu            \n", x,nentries);
 
 
-  if(gList && gROOT->GetListOfFiles()->GetSize()>0) {
-    std::string num = GetRunNumber(gROOT->GetListOfFiles()->At(0)->GetName());
-    num = num.substr(0,4);
-    SaveHistograms(Form("output%s.root",num.c_str())); // saves any histograms to output.root, will over write EVER time.
-  }
+  //if(gList && gROOT->GetListOfFiles()->GetSize()>0) {
+  //  std::string num = GetRunNumber(gROOT->GetListOfFiles()->At(0)->GetName());
+  //  num = num.substr(0,4);
+  //  SaveHistograms(Form("output%s.root",num.c_str())); // saves any histograms to output.root, will over write EVER time.
+  //}
 
   OutputManager::Get()->Close();
   //    CloseCoorMap();
@@ -156,31 +156,33 @@ void BCSint::ListSort(){
   std::vector<double> tofpara;
   if(gChain->GetCurrentFile()) {
     std::string runnum = GetRunNumber(gChain->GetCurrentFile()->GetName());
-//================= TOFCorrection Paras Read================//
+    //================= TOFCorrection Paras Read================//
     runnum = runnum.substr(0,4);
-    tofpara = TOFCorrection::Get()->ReadFile(std::stoi(runnum));
-//=========================================================//
+    //tofpara = TOFCorrection::Get()->ReadFile(std::stoi(runnum));
+    //=========================================================//
     OutputManager::Get()->Set(runnum);
     //OutputManager::Get()->Set(GetRunNumber(gChain->GetCurrentFile()->GetName()));
     //std::cout << "created output tree file: " << OutputManager::Get()->GetName() << std::endl;
     std::cout << "created output tree file: " << runnum << std::endl;
   }
-  //printf("%f : %f :%f\n", tofpara[0], tofpara[1], tofpara[2]);
-  if(tofpara.empty()) return;
+  //if(tofpara.empty()) return;
   for(x=0;x<nentries;x++) {
     gChain->GetEntry(x);
     for(size_t y=0;y<event->GetNEvents();y++) {
       chan = event->GetData()[y];          
-      //DetHit *hit = new DetHit(chan);
       int address      = chan->GetAddress();
       int number       = chan->GetNumber();
       double timestamp = chan->GetCoarseTime();
       double charge    = chan->GetEnergy();
-      if(number==177){
-        charge = tofpara[0]+tofpara[1]*charge+tofpara[2]*charge*charge;
-      }
+      //if(number==177){
+        //charge = tofpara[0]+tofpara[1]*charge+tofpara[2]*charge*charge;
+      //}
       OutputManager::Get()->FillList(address, number, timestamp, charge);
-         
+      if(number==181){
+        FillHistogram("PIN1E",10e3,0,10e3,charge);
+        if(charge>100) FillHistogram("PIN1E2", 10e3,0,10e3,charge);
+      }
+
       //FillHistogram("Summary",16000,0,16000,hit->GetEnergy(),300,0,300,hit->GetNumber());
       //FillHistogram("Summary_raw",16000,0,16000,hit->GetCharge(),300,0,300,hit->GetNumber());
     }
@@ -197,11 +199,71 @@ void BCSint::ListSort(){
   //  num = num.substr(0,4);
   //  SaveHistograms(Form("list_output%s.root",num.c_str())); // saves any histograms to output.root, will over write EVER time.
   //}
+  SaveHistograms("list_output1031.root");
   OutputManager::Get()->Close();
 }
 
+//========================== Event File Sort ===========================//
+// Get pid and momentum before and after TOF correction//
+void BCSint::EventSort(){
+
+  DDASEvent *event  = new DDASEvent;
+  ddaschannel *chan = new ddaschannel;
+  gChain->SetBranchAddress("ddasevent",&event);
+  TChannel::ReadDetMapFile();
+  
+  std::vector<double> tofpara;
+  std::string runnum = GetRunNumber(gROOT->GetListOfFiles()->At(0)->GetName());
+  runnum = runnum.substr(0,4);
+  tofpara = TOFCorrection::Get()->ReadFile(std::stoi(runnum));
+  OutputManager::Get()->Set(runnum);
+  std::cout << "created output tree file: " << runnum << std::endl;
+  if(tofpara.empty()) return;
 
 
+
+  long n = gChain->GetEntries();
+  //n = 1e5;
+  long x = 0;
+  double starttime = 0;
+  double buildtime = BUILDTIME;
+  std::vector<DetHit> *vec_hit = new std::vector<DetHit>;
+
+  for(x=0;x<n;x++) {
+    gChain->GetEntry(x);
+    for(size_t y=0;y<event->GetNEvents();y++) {
+      chan = event->GetData()[y];
+      DetHit hit(chan);
+      if(hit.GetNumber()==181){
+        FillHistogram("PIN1E", 10e3,0,10e3,hit.GetCharge());
+        if(hit.GetCharge()>100) FillHistogram("PIN1E2", 10e3,0,10e3,hit.GetCharge());
+      }
+      if((hit.GetTimestamp()-starttime)>buildtime){
+        OutputManager::Get()->FillEvent(vec_hit);
+        for(size_t z=0;z<vec_hit->size();z++){
+          DetHit fhit = vec_hit->at(z);
+          if(fhit.GetNumber()==181){
+            FillHistogram("vec_PIN1E", 10e3,0,10e3,fhit.GetCharge());
+            if(fhit.GetCharge()>100) FillHistogram("vec_PIN1E2", 10e3,0,10e3,fhit.GetCharge());
+          }
+        }
+        starttime = hit.GetTimestamp();
+        vec_hit->clear();
+      }
+      vec_hit->push_back(hit);
+    }
+
+    if((x%200000)==0){
+      printf("  on entry %lu / %lu     \r",x,n);
+      fflush(stdout);
+    }
+  }
+  printf("    on entry %lu / %lu   \n",x,n);
+  OutputManager::Get()->Close();
+  SaveHistograms(Form("event_output%s.root",runnum.c_str())); 
+
+  return;
+}
 
 
 

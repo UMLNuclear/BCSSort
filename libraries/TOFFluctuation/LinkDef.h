@@ -6,4 +6,7 @@
 
 #pragma link C++ class TOFCorrection+;
 
+#pragma link C++ function ReadFile;
+
+
 #endif

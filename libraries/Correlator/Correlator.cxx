@@ -148,25 +148,6 @@ void Correlator::FlushPixel(pixel pix, bool histogram) {
     }
 
 
-/*
-    for(auto &it1 : *vdec) {
-      double FHtime = it1.GetTimestamp();
-
-      FillHistogram("Decay_DSSD_dt",1000,-1000,1000,it1.fDSSDFront[0].GetTimestamp() - it1.fDSSDBack[0].GetTimestamp());
-
-      for(auto &it2 : it1.fGe) { 
-        double dt = FHtime - it2.GetTimestamp();
-        FillHistogram("timedif_decay_gamma",1000,-1000,1000,dt);
-        FillHistogram("summary", 300,0,300,it2.GetNumber(), 8000,0,4000,it2.GetEnergy());
-        FillHistogram("summary_raw", 300,0,300,it2.GetNumber(), 8000,0,64000,it2.GetCharge());
-        double deltatime = fabs(it1.GetTimestamp() - it2.GetTimestamp());
-        if(deltatime>40 && deltatime<300){ // Fill gamma spectrum
-          FillHistogram("summary_prompt", 300,0,300,it2.GetNumber(), 8000,0,4000,it2.GetEnergy());
-          FillHistogram("summary_prompt_raw", 300,0,300,it2.GetNumber(), 8000,0,64000,it2.GetCharge());
-        }
-      }
-    }
-*/
     TIter iter(gCuts);
     while(TCutG *cut = (TCutG*)iter.Next()) {
       if(!cut->IsInside(current->fI2S,current->fPIN1E)) continue;    

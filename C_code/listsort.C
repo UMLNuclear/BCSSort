@@ -17,47 +17,65 @@
 
 void Process(std::vector<DetHit> vec){
   int sssd_flag = 0;
+  std::vector<DetHit> FL;
+  std::vector<DetHit> BL;
   DetHit pin1_i2s;
   DetHit pin1;
   DetHit i2s_i2n;
+  double pin1_charge = -1;
+  double pin1_cout = 0;
   for(size_t y=0;y<vec.size();y++){
+    if(vec[y].GetNumber()==181){
+      pin1_cout++;
+      FillHistogram("PIN1E_in",10e3,0,10e3,vec[y].GetCharge());
+      if(vec[y].GetCharge()>100) FillHistogram("PIN1E2_in",10e3,0,10e3,vec[y].GetCharge());
+    }
+    FillHistogram("PIN1_Count",10,0,10,pin1_cout);
     switch(vec[y].GetNumber()){
+      case 40 ... 79:  //FL
+        FL.push_back(vec[y]);
+        break;
+
+      case 120 ... 159:  //BL
+        BL.push_back(vec[y]);
+        break;
+
       case 160 ... 175:  //SSSD
         if(vec[y].GetCharge()>100){
           sssd_flag++;
         }
         break;
-      
+
       case 177: //pin1_i2s
         pin1_i2s = vec[y];
         break;
-      
+
       case 180: //i2s_i2n
         i2s_i2n = vec[y];
         break;
-      
+
       case 181: //pin1
         pin1 = vec[y];
+        pin1_charge = vec[y].GetCharge();
         break;
 
-        default:
+      default:
         break;
     }
-    if(pin1_i2s.GetCharge()>0 && pin1.GetCharge()>0){
-      if(!sssd_flag){
-        FillHistogram("pid_nosssd",2e3,0,2e4,pin1_i2s.GetCharge(), 8e3,0,8e3,pin1.GetCharge());
-      }  
-      FillHistogram("pid",2e3,0,2e4,pin1_i2s.GetCharge(), 8e3,0,8e3,pin1.GetCharge());
-    }
-    //if(pin1_i2s.GetEnergy()>0 && i2s_i2n.GetCharge()>0){
-    //  if(!sssd_flag){
-    //    FillHistogram("momentum_nosssd",3e3,0,3e4,pin1_i2s.GetCharge(), 3e3,0,3e4,i2s_i2n.GetCharge());
-    //  }
-    //  FillHistogram("momentum",3e3,0,3e4,pin1_i2s.GetCharge(), 3e3,0,3e4,i2s_i2n.GetCharge());
-    //}
-    
   }
-
+  if(pin1_charge>0){
+    FillHistogram("PIN1E",10e3,0,10e3,pin1_charge);
+    if(pin1_charge>100) FillHistogram("PIN1E2",10e3,0,10e3,pin1_charge);
+    if(sssd_flag==0){
+      if(FL.size()>0 && BL.size()>0){
+        //FillHistogram("pid_isgood_nosssd",2e3,0,2e4,pin1_i2s.GetCharge(), 10e3,0,10e3,pin1.GetCharge());
+        FillHistogram("PIN1E_isgood_nosssd", 10e3,0,10e3,pin1.GetCharge());
+        if(pin1.GetCharge()>100) FillHistogram("PIN1E_isgood_nosssd2", 10e3,0,10e3,pin1.GetCharge());
+      }
+      FillHistogram("PIN1E_nosssd",10e3,0,10e3,pin1.GetCharge());
+      if(pin1.GetCharge()>100) FillHistogram("PIN1E_nosss2",10e3,0,10e3,pin1.GetCharge());
+    }  
+  }
 
 
 }
@@ -80,7 +98,7 @@ void listsort(){
   double starttime = 0;
   double buildtime = BUILDTIME;
   std::vector<DetHit> vec_hit;
-  
+
   long n = gChain->GetEntries();
   //n = 1e6;
   long x = 0;
@@ -91,6 +109,10 @@ void listsort(){
     fhit->SetNumber(fnumber);
     fhit->SetTimestamp(ftimestamp);
     fhit->SetCharge(fcharge);
+    if(fhit->GetNumber()==181){
+      FillHistogram("PIN1E_sin",10e3,0,10e3,fhit->GetCharge());
+      if(fhit->GetCharge()>100) FillHistogram("PIN1E2_sin",10e3,0,10e3,fhit->GetCharge());
+    }
     if((fhit->GetTimestamp()-starttime) > buildtime){
       starttime = fhit->GetTimestamp();
       Process(vec_hit);

@@ -53,7 +53,7 @@ bool Implant::Stopped() const {
 
 ////// Set (buill event from <vector>DetHit) ////////
 void Implant::Set(std::vector<DetHit> *hits){
-    DetHit strip;
+    //DetHit strip;
     for (int y=0; y<hits->size(); y++){// get each element from event
         DetHit  hitt = hits->at(y);
         switch (hitt.GetNumber()){
@@ -69,16 +69,16 @@ void Implant::Set(std::vector<DetHit> *hits){
                 fSSSD.push_back(DetHit(hitt));
                 break;
 
+            case 176:
+                fI2N = hitt.GetCharge();
+                fI2NT = hitt.GetTimestamp();
+                break;
+            
             case 177:
                 fI2S = hitt.GetCharge();
                 fI2ST = hitt.GetTimestamp();
                 break;
 
-            case 178:
-                fI2N = hitt.GetCharge();
-                fI2NT = hitt.GetTimestamp();
-                break;
-            
             case 180:
                 fI2S_I2N = hitt.GetCharge();
                 fI2S_I2N_T = hitt.GetTimestamp();
@@ -113,6 +113,8 @@ void Implant::Clear(){
     fPIN1T = 0;
     fPIN2E = 0;
     fPIN2T = 0;
+    fI2S_I2N = 0;
+    fI2S_I2N_T = 0;
     fDSSDFront.clear();
     fDSSDBack.clear();
     fSSSD.clear(); 
@@ -245,6 +247,8 @@ void Implant::Copy(Implant &lhs) const{
     lhs.fPIN1T = this->fPIN1T;
     lhs.fPIN2E = this->fPIN2E;
     lhs.fPIN2T = this->fPIN2T;
+    lhs.fI2S_I2N = this->fI2S_I2N;
+    lhs.fI2S_I2N_T = this->fI2S_I2N_T;
     lhs.fDSSDFront = this->fDSSDFront;
     lhs.fDSSDBack  = this->fDSSDBack ;
     lhs.fSSSD      = this->fSSSD     ; 

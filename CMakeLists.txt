@@ -58,6 +58,10 @@ ROOT_GENERATE_DICTIONARY(G__TOFCORRECTION TOFCorrection.h LINKDEF ${CMAKE_BINARY
 add_library(TOFCorrection SHARED G__TOFCORRECTION.cxx libraries/TOFFluctuation/TOFCorrection.cxx)               
 target_link_libraries(TOFCorrection PUBLIC ${ROOT_LIBRARIES})                                                                  
 
+ROOT_GENERATE_DICTIONARY(G__HISTOGRAM Histogram.h LINKDEF ${CMAKE_BINARY_DIR}/libraries/Histogram/LinkDef.h)   
+add_library(Histogram SHARED G__HISTOGRAM.cxx libraries/Histogram/Histogram.cxx)               
+target_link_libraries(TOFCorrection PUBLIC ${ROOT_LIBRARIES})                                                                  
+
 ROOT_GENERATE_DICTIONARY(G__OUTPUTMANAGER OutputManager.h LINKDEF ${CMAKE_BINARY_DIR}/libraries/OutputManager/LinkDef.h)   
 add_library(OutputManager SHARED G__OUTPUTMANAGER.cxx libraries/OutputManager/OutputManager.cxx)               
 target_link_libraries(OutputManager PUBLIC ${ROOT_LIBRARIES})                                                                  
@@ -78,7 +82,7 @@ target_link_libraries(Junk PUBLIC ${ROOT_LIBRARIES})
 
 add_executable(bcssort src/bcssort.cxx) 
 
-target_link_libraries(bcssort ${ROOT_LIBRARIES} BCSint BCSUtil DDAS HIT Correlator OutputManager GROOT TOFCorrection Junk)
+target_link_libraries(bcssort ${ROOT_LIBRARIES} BCSint BCSUtil DDAS HIT Correlator OutputManager GROOT TOFCorrection Histogram Junk)
 
 
 

@@ -4,7 +4,7 @@
 
 #include <utility>
 
-#define BUILDTIME 5000  //time  in nanoseconds
+#define BUILDTIME 10000  //time  in nanoseconds
 #define EXPIRETIME 500E6  //time  in nanoseconds
 
 typedef std::pair<int,int> pixel;
