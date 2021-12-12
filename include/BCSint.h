@@ -30,7 +30,6 @@ class BCSint : public TRint {
     void DoSort(); // organize data: dchan->beta & event;
     void ListSort(); // organize data: dchan->DetHit
     void EventSort(); // organize data: dchan->DetHit
-    
 
     int UpdateFileCount() { fFileCount++; return fFileCount-1; }
 

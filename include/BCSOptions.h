@@ -21,12 +21,16 @@ class BCSOptions : public TObject {
     bool WriteTree()   { return fWriteTree;   }
     bool WriteEventTree()   { return fWriteEventTree;   }
     bool WriteListTree()   { return fWriteListTree;   }
+    bool WriteImpTree()   { return fWriteImpTree;   }
+    bool WriteDecTree()   { return fWriteDecTree;   }
 
   private: 
     bool fSortAndQuit;
     bool fWriteTree;
     bool fWriteEventTree;
     bool fWriteListTree;
+    bool fWriteImpTree;
+    bool fWriteDecTree;
 
 
   ClassDef(BCSOptions,0)

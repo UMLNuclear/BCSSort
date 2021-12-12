@@ -66,18 +66,96 @@ int BCSEvent::HGFSize() const {  int count=0; for(auto &it : fHits) { if(Range(i
 int BCSEvent::HGBSize() const {  int count=0; for(auto &it : fHits) { if(Range(it.GetNumber(),80,119))  count++; } return count; }
 int BCSEvent::LGFSize() const {  int count=0; for(auto &it : fHits) { if(Range(it.GetNumber(),40,79))   count++; } return count; }
 int BCSEvent::LGBSize() const {  int count=0; for(auto &it : fHits) { if(Range(it.GetNumber(),120,159)) count++; } return count; }
+int BCSEvent::HPGeSize() const {  int count=0; for(auto &it : fHits) { if(Range(it.GetNumber(),208,271)) count++; } return count; }
 int BCSEvent::SSSDSize() const {  
   int count=0; 
   for(auto &it : fHits) { 
     if(Range(it.GetNumber(),160,175)){
-      if(it.GetCharge()>100) count++; 
+      //if(it.GetCharge()>100) count++;
+      count++; 
+    }  
+  } 
+  return count; 
+}
+int BCSEvent::SSSDLGSize() const {  
+  int count=0; 
+  for(auto &it : fHits) { 
+    if(Range(it.GetNumber(),272,287)){
+      //if(it.GetCharge()>100) 
+      count++; 
     }  
   } 
   return count; 
 }
 
 
+DetHit BCSEvent::LGFMax() const {
+  DetHit fhit;
+  double Emax = 0;
+  for(auto &it:LGF()){
+    if(it.GetEnergy()>Emax){
+      fhit = it;
+      Emax = it.GetEnergy();
+    }
+  }
+  return fhit;
+}
 
+DetHit BCSEvent::LGBMax() const {
+  DetHit fhit;
+  double Emax = 0;
+  for(auto &it:LGB()){
+    if(it.GetEnergy()>Emax){
+      fhit = it;
+      Emax = it.GetEnergy();
+    }
+  }
+  return fhit;
+}
+
+DetHit BCSEvent::HGFMax() const {
+  DetHit fhit;
+  double Emax = 0;
+  for(auto &it:HGF()){
+    if(it.GetEnergy()>Emax){
+      fhit = it;
+      Emax = it.GetEnergy();
+    }
+  }
+  return fhit;
+}
+
+DetHit BCSEvent::HGBMax() const {
+  DetHit fhit;
+  double Emax = 0;
+  for(auto &it:HGB()){
+    if(it.GetEnergy()>Emax){
+      fhit = it;
+      Emax = it.GetEnergy();
+    }
+  }
+  return fhit;
+}
+
+double BCSEvent::DSSDloT() const {
+  double t = -1;
+  if(LGFSize()>0){
+    t = LGFMax().GetTimestamp();    
+  }else if(LGBSize()>0){
+    t = LGBMax().GetTimestamp();
+  }
+  return t;
+}
+
+double BCSEvent::DSSDhiT() const {
+  double t = -1;
+  if(HGFSize()>0){
+    t = HGFMax().GetTimestamp();    
+  }else if(HGBSize()>0){
+    t = HGBMax().GetTimestamp();
+  }
+  return t;
+}
 
 std::vector<DetHit> BCSEvent::LGF() const {
   std::vector<DetHit> vec;
@@ -91,6 +169,31 @@ std::vector<DetHit> BCSEvent::LGB() const {
   std::vector<DetHit> vec;
   for(auto &it :fHits) {
     if(Range(it.GetNumber(),120,159)) vec.push_back(it);
+  } 
+  return vec;
+}
+
+std::vector<DetHit> BCSEvent::HPGe() const {
+  std::vector<DetHit> vec;
+  for(auto &it :fHits) {
+    if(Range(it.GetNumber(),208,271)) vec.push_back(it);
+  } 
+  return vec;
+}
+
+std::vector<DetHit> BCSEvent::LaBr() const {
+  std::vector<DetHit> vec;
+  for(auto &it :fHits) {
+    if(Range(it.GetNumber(),192,207)) vec.push_back(it);
+  } 
+  return vec;
+}
+
+
+std::vector<DetHit> BCSEvent::SSSD() const {
+  std::vector<DetHit> vec;
+  for(auto &it :fHits) {
+    if(Range(it.GetNumber(),160,175)) vec.push_back(it);
   } 
   return vec;
 }
@@ -203,6 +306,35 @@ std::pair<int,int> BCSEvent::HGPixel() const {
 }
 //===================================================================//
 
+TH2D *BCSEvent::DrawLG(Option_t *opt) const {
+
+  TH2D *hist = 0; 
+  gDirectory->FindObjectAny("hitpad");
+  if(!hist) {
+    hist = new TH2D("hitpad","hitpad",80,0,80, 40,0,40);
+  } else {
+    hist->Reset();
+  }
+  bool print=false;
+  TString sopt(opt);
+  sopt.ToLower();
+  if(sopt.Contains("print")) print = true;
+  for(size_t m=0;m<LGFSize();m++){
+    for(size_t n=0;n<LGBSize();n++){
+      int x,y, fc,bc;
+       x = -LGB().at(n).GetNumber()+159;
+       y = -LGF().at(m).GetNumber()+79;
+       fc = LGF().at(m).GetEnergy();
+       bc = LGB().at(n).GetEnergy();
+       if(print) printf("\t x[%02i]\ty[%02i] : %i\t%i\n",x,y,bc,fc); 
+       hist->Fill(x,y,fc);
+       hist->Fill(x+40,y,bc);
+    }
+  }
+  
+  return hist;
+}
+
 TH2D *BCSEvent::DrawHG(Option_t *opt) const {
 
   TH2D *hist = 0; 
@@ -233,39 +365,37 @@ TH2D *BCSEvent::DrawHG(Option_t *opt) const {
 }
 
 
-void BCSEvent::PrintNumber(){
-  int clgf, clgb, chgf, chgb = 0; 
-  int csssd, clabr, chpge, cig = 0;
-  std::vector<std::pair<int, double>> vec;
-  printf("Event Size = %d\n\n", Size());
-  for(auto &it:fHits){  
-    int num = it.GetNumber();
-    if(num>=0 && num<=39) chgf++;
-    if(num>=40 && num<=79) clgf++;
-    if(num>=80 && num<=119) chgb++;
-    if(num>=120 && num<=159) clgb++;
-    if(num>=160 && num<=175) csssd++;
-    if(num>=192 && num<=207) clabr++;
-    if(num>=208 && num<=271) chpge++;
-    if(num>=272 && num<=287) cig++;
-    vec.push_back(std::make_pair(it.GetNumber(), it.GetEnergy()));
+TH2D *BCSEvent::DrawSSSD(Option_t *opt) const {
+  
+  TH2D *hist = 0;
+  gDirectory->FindObjectAny("sum");
+  if(!hist){
+    hist = new TH2D("sum","sum",16,0,16, 8e3,0,8e3);
+  }else{
+    hist->Reset();
   }
-  std::sort(vec.begin(), vec.end());
-  for(size_t i=0;i<vec.size();i++){
-    printf("Detector # = %i\t\t", vec[i].first);
-    printf("Energy  = %f\n", vec[i].second);
+  bool print = false;
+  TString sopt(opt);
+  sopt.ToLower();
+  if(sopt.Contains("print")) print = true;
+  for(size_t m=0;m<SSSDSize();m++){
+    int x = SSSD().at(m).GetNumber()-160;
+    double charge = SSSD().at(m).GetCharge();
+    if(print) printf("\t channel = %02i\tcharge = %f\n",x,charge);
+    hist->Fill(x,charge);
   }
-  printf("\n");
-  printf("LGF.size = %i\n",clgf);
-  printf("LGB.size = %i\n",clgb);
-  printf("HGF.size = %i\n",chgf);
-  printf("HGB.size = %i\n",chgb);
-  printf("SSSD.size = %i\n",csssd);
-  printf("HPGe.size = %i\n",chpge);
-  printf("LaBr.size = %i\n",clabr);
-  printf("SSSD_Ig.size = %i\n",cig);
-  printf("====================================\n");
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -23,10 +23,12 @@
 
 #include <globals.h>
 
+//TChain *gChain = new TChain("dchan");
 //TChain *gChain = new TChain("tree");
-TChain *gChain = new TChain("dchan");
-//TChain *gChain = new TChain("event");
+TChain *gChain = new TChain("event");
 //TChain *gChain = new TChain("beta");
+//TChain *gChain = new TChain("implant");
+//TChain *gChain = new TChain("decay");
 TList  *gCuts  = new TList();
 
 
@@ -111,8 +113,10 @@ void BCSint::DoSort() {
     for(size_t y=0;y<event->GetNEvents();y++) {
       chan = event->GetData()[y];          
       DetHit hit(chan);
-      FillHistogram("Summary",16000,0,16000,hit.GetEnergy(),300,0,300,hit.GetNumber());
-      FillHistogram("Summary_raw",16000,0,16000,hit.GetCharge(),300,0,300,hit.GetNumber());
+      if(hit.GetNumber()>=160 && hit.GetNumber()<=175){
+        if(hit.GetEnergy()<600 || hit.GetNumber()==160 || hit.GetNumber()==175)
+          continue;
+      }
       if((hit.GetTimestamp()-starttime)>buildtime){
         Correlator::Get()->AddEvent(vec_hit);
         starttime = hit.GetTimestamp();
@@ -129,11 +133,11 @@ void BCSint::DoSort() {
   printf("  on entry %lu / %lu            \n", x,nentries);
 
 
-  //if(gList && gROOT->GetListOfFiles()->GetSize()>0) {
-  //  std::string num = GetRunNumber(gROOT->GetListOfFiles()->At(0)->GetName());
-  //  num = num.substr(0,4);
-  //  SaveHistograms(Form("output%s.root",num.c_str())); // saves any histograms to output.root, will over write EVER time.
-  //}
+  if(gList && gROOT->GetListOfFiles()->GetSize()>0) {
+    std::string num = GetRunNumber(gROOT->GetListOfFiles()->At(0)->GetName());
+    //num = num.substr(0,4);
+    //SaveHistograms(Form("output_%s.root",num.c_str())); // saves any histograms to output.root, will over write EVER time.
+  }
 
   OutputManager::Get()->Close();
   //    CloseCoorMap();
@@ -154,17 +158,17 @@ void BCSint::ListSort(){
 
   TChannel::ReadDetMapFile();
   std::vector<double> tofpara;
-  if(gChain->GetCurrentFile()) {
-    std::string runnum = GetRunNumber(gChain->GetCurrentFile()->GetName());
-    //================= TOFCorrection Paras Read================//
-    runnum = runnum.substr(0,4);
-    //tofpara = TOFCorrection::Get()->ReadFile(std::stoi(runnum));
-    //=========================================================//
-    OutputManager::Get()->Set(runnum);
-    //OutputManager::Get()->Set(GetRunNumber(gChain->GetCurrentFile()->GetName()));
-    //std::cout << "created output tree file: " << OutputManager::Get()->GetName() << std::endl;
-    std::cout << "created output tree file: " << runnum << std::endl;
-  }
+  //if(gChain->GetCurrentFile()) {
+  std::string runnum = GetRunNumber(gChain->GetCurrentFile()->GetName());
+  //================= TOFCorrection Paras Read================//
+  //runnum = runnum.substr(0,4);
+  //tofpara = TOFCorrection::Get()->ReadFile(std::stoi(runnum));
+  //=========================================================//
+  OutputManager::Get()->Set(runnum);
+  //OutputManager::Get()->Set(GetRunNumber(gChain->GetCurrentFile()->GetName()));
+  //std::cout << "created output tree file: " << OutputManager::Get()->GetName() << std::endl;
+  std::cout << "created output tree file: " << runnum << std::endl;
+  //}
   //if(tofpara.empty()) return;
   for(x=0;x<nentries;x++) {
     gChain->GetEntry(x);
@@ -175,7 +179,7 @@ void BCSint::ListSort(){
       double timestamp = chan->GetCoarseTime();
       double charge    = chan->GetEnergy();
       //if(number==177){
-        //charge = tofpara[0]+tofpara[1]*charge+tofpara[2]*charge*charge;
+      //charge = tofpara[0]+tofpara[1]*charge+tofpara[2]*charge*charge;
       //}
       OutputManager::Get()->FillList(address, number, timestamp, charge);
       if(number==181){
@@ -199,59 +203,58 @@ void BCSint::ListSort(){
   //  num = num.substr(0,4);
   //  SaveHistograms(Form("list_output%s.root",num.c_str())); // saves any histograms to output.root, will over write EVER time.
   //}
-  SaveHistograms("list_output1031.root");
+  SaveHistograms(Form("listoutput%s.root",runnum.c_str()));
   OutputManager::Get()->Close();
 }
 
 //========================== Event File Sort ===========================//
-// Get pid and momentum before and after TOF correction//
+// Fill implant tree and decay tree from event//
 void BCSint::EventSort(){
 
-  DDASEvent *event  = new DDASEvent;
-  ddaschannel *chan = new ddaschannel;
-  gChain->SetBranchAddress("ddasevent",&event);
+  std::vector<TCutG*> veccut;
+  TFile *cutf2 = TFile::Open("/home/zhu/packages/BCSSort/root_file/cuts/promptAll_imp0048.root");
+  TCutG *_cut0 = (TCutG *)cutf2->Get("_cut0");
+  TCutG *_cut1 = (TCutG *)cutf2->Get("_cut1");
+  veccut.push_back(_cut0); // TOF vs timedif for 44S;
+  veccut.push_back(_cut1); // Pin1E vs timedif for S;
+
+
+  BCSEvent *fevent = new BCSEvent;
+  gChain->SetBranchAddress("BCSEvent", &fevent); 
   TChannel::ReadDetMapFile();
-  
-  std::vector<double> tofpara;
+
   std::string runnum = GetRunNumber(gROOT->GetListOfFiles()->At(0)->GetName());
-  runnum = runnum.substr(0,4);
-  tofpara = TOFCorrection::Get()->ReadFile(std::stoi(runnum));
   OutputManager::Get()->Set(runnum);
   std::cout << "created output tree file: " << runnum << std::endl;
-  if(tofpara.empty()) return;
 
 
 
   long n = gChain->GetEntries();
-  //n = 1e5;
+  //n = 1e2;
   long x = 0;
-  double starttime = 0;
-  double buildtime = BUILDTIME;
-  std::vector<DetHit> *vec_hit = new std::vector<DetHit>;
 
+  double dt;
   for(x=0;x<n;x++) {
     gChain->GetEntry(x);
-    for(size_t y=0;y<event->GetNEvents();y++) {
-      chan = event->GetData()[y];
-      DetHit hit(chan);
-      if(hit.GetNumber()==181){
-        FillHistogram("PIN1E", 10e3,0,10e3,hit.GetCharge());
-        if(hit.GetCharge()>100) FillHistogram("PIN1E2", 10e3,0,10e3,hit.GetCharge());
-      }
-      if((hit.GetTimestamp()-starttime)>buildtime){
-        OutputManager::Get()->FillEvent(vec_hit);
-        for(size_t z=0;z<vec_hit->size();z++){
-          DetHit fhit = vec_hit->at(z);
-          if(fhit.GetNumber()==181){
-            FillHistogram("vec_PIN1E", 10e3,0,10e3,fhit.GetCharge());
-            if(fhit.GetCharge()>100) FillHistogram("vec_PIN1E2", 10e3,0,10e3,fhit.GetCharge());
-          }
+    if(fevent->Pin1E()>0){
+      if(fevent->DSSDloT()>0){ 
+        dt = fevent->DSSDloT() - fevent->Pin1T();
+        dt = dt/1000.;
+        if(veccut[0]->IsInside(dt, fevent->I2S()) && veccut[1]->IsInside(dt, fevent->Pin1E())){
+          OutputManager::Get()->FillImp(&(fevent->fHits));
         }
-        starttime = hit.GetTimestamp();
-        vec_hit->clear();
       }
-      vec_hit->push_back(hit);
+    }else{
+      if(fevent->HGFSize()>0 && fevent->HGBSize()>0){
+        dt = fevent->HGFMax().GetTimestamp() - fevent->HGBMax().GetTimestamp();
+        dt = dt/1000.;
+        //if((dt>=0.04 && dt<=0.14)){ // prompt gate for decay
+        if((dt>=-0.25 && dt<=-0.2) || (dt>=0.3 && dt<=0.35)){ // delay gate for decay
+          OutputManager::Get()->FillDec(&(fevent->fHits));
+        }
+      }
     }
+
 
     if((x%200000)==0){
       printf("  on entry %lu / %lu     \r",x,n);
@@ -260,17 +263,7 @@ void BCSint::EventSort(){
   }
   printf("    on entry %lu / %lu   \n",x,n);
   OutputManager::Get()->Close();
-  SaveHistograms(Form("event_output%s.root",runnum.c_str())); 
 
   return;
 }
-
-
-
-
-
-
-
-
-
 

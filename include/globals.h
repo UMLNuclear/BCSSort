@@ -4,8 +4,11 @@
 
 #include <utility>
 
-#define BUILDTIME 10000  //time  in nanoseconds
+#define BUILDTIME 5E3  //time  in nanoseconds
 #define EXPIRETIME 500E6  //time  in nanoseconds
+#define minImplantDT 1E9 //"back-to-back" implant time in ns;
+#define tDiffCorrCut 1E9 //max decay time in ns;
+
 
 typedef std::pair<int,int> pixel;
 

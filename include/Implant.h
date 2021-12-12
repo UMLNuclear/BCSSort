@@ -54,6 +54,7 @@ class Implant{
 
         void Clear();
         void Set(std::vector<DetHit> *hits);
+
         void Print() const; //const(constant fucntion): variables are constant. we cannot change them.
         void PrintFun(TCutG *mycut=0) const;
         void SimplePrint() const;
@@ -62,9 +63,11 @@ class Implant{
         int FrontSize() const { return fDSSDFront.size(); }
         int BackSize() const { return fDSSDBack.size(); }
         bool Stopped() const; // {return !fSSSD.size(); } 
-        bool Inside(TCutG *mycut) {return mycut->IsInside(fI2S, fPIN1E);} 
 
         bool IsGood() const ;
+        double DSSDloT() const;
+        DetHit LGFMax() const;
+        DetHit LGBMax() const;
         std::pair<int,int> GetPixel() const;   
         void Copy(Implant &) const;     
 
@@ -126,7 +129,11 @@ class Decay{
         }
 
         
-        bool IsGood() const;        
+        bool IsPrompt() const;        
+        bool IsDelay() const;        
+        double DSSDhiT() const;
+        DetHit HGFMax() const;
+        DetHit HGBMax() const;
         std::pair<int,int> GetPixel() const;   
         
 
@@ -192,7 +199,6 @@ class Beta{
     int DecaySize() const { return fDecay.size(); }
     void Clear(); 
     void SimplePrint() const;
-    bool Inside(TCutG *mycut) {return fImplant.Inside(mycut);}   
     
     bool Stopped() const {return !fImplant.fSSSD.size(); } 
 

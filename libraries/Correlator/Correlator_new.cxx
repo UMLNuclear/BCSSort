@@ -6,14 +6,6 @@
 #include <iostream>
 #include <cfloat>
 
-#include<TFile.h>
-#include<TChain.h>
-#include<TTree.h>
-#include<TCutG.h>
-#include<TKey.h>
-#include<TList.h>
-
-#include<TChannel.h>
 #include <BCSint.h>
 #include <Correlator.h>
 #include <DetHit.h>
@@ -70,13 +62,6 @@ void Correlator::AddEvent(std::vector<DetHit> *event) {
       clarray = true; continue;
     }
   }
-
-  if(hifront || lofront || hiback || loback || pin1){ //hasDSSD 
-    //OutputManager::Get()->FillEvent(event);
-    for(auto &it: *event){
-      FillHistogram("summary_gate", 16000,0,16000,it.GetEnergy(), 300,0,300,it.GetNumber());
-    }
-  }
   if(hifront || lofront || hiback || loback){ //hasDSSD 
     if(pin1 && (lofront && loback) && (pin1E>4000 && pin1E<30000)){ //isImplant
       AddImplant(event);
@@ -85,7 +70,7 @@ void Correlator::AddEvent(std::vector<DetHit> *event) {
     }
   }else{
     if(!pin1 && clarray){
-      //AddCloverOnly(event);
+      AddCloverOnly(event);
     }
   }  
   fImplant->Clear();
@@ -121,14 +106,14 @@ void Correlator::AddDecay(std::vector<DetHit> *event) {
 
 void Correlator::AddCloverOnly(std::vector<DetHit> *event){
   fDecay->Set(event);
-  double cloverTime = event->at(0).GetTimestamp(); // first hit time as current_time;
+  double cloverTime = event[0].GetTimestamp(); // first hit time as current_time;
   double isomerTimeCut = 40e3; //unit:ns = 40us;
   for(auto &it:fImplantMap){
     if(it.second->IsGood()){
       double isomerTDiff = cloverTime - it.second->GetTimestamp();
       if(isomerTDiff>0 && isomerTDiff<isomerTimeCut){
         fDecay->SetImplantTime(isomerTDiff/1e6); 
-        fDecayMap[it.first]->push_back(*fDecay);  
+        fDecayMap[it.first]->push(*fDecay);  
       } 
     }
   } 
@@ -142,13 +127,11 @@ pixel Correlator::Match(pixel dpix,double T) {  //given a decay, returns mathcin
     for(int col=dpix.second-1;col<=dpix.second+1;col++) {
       if((row<0||row>39) || (col<0||col>39)) continue;
       pixel temp = std::make_pair(row,col);
-      if(fImplantMap[temp]->IsGood()){ // decay must came later than imp;
-        double ionDecayTDiff = fImplantMap[temp]->fPIN1T - T;
-        if(ionDecayTDiff>0){ 
-          if(ionDecayTDiff <dt) {
-            dt = ionDecayTDiff;
-            best = temp;
-          }
+      if(ionDecayTDiff>0 && fImplantMap[temp]->IsGood()){ // decay must came later than imp;
+        double ionDecayTDiff = fImplantMap[temp]->fPIN1T - T; 
+        if(ionDecayTDiff <dt) {
+          dt = ionDecayTDiff;
+          best = temp;
         }
       }
     }
@@ -200,18 +183,45 @@ void Correlator::FlushPixel(pixel pix, bool histogram) {
     //=======================================//
     OutputManager::Get()->Fill(current,vdec);
     //=======================================//
-    //FillHistogram("pid_nogate", 2e3,0,2e4,current->fI2S, 5e3,0,20e3,current->fPIN1E);
-    //for(auto &it1:*vdec){
-    //  for(auto &it2:it1.fGe){
-    //    FillHistogram("single_imptime", 3000,0,1500,it1.fImplantTime,8000,0,4000,it2.GetEnergy());
+    //FillHistogram("pid_cur", 2e3,0,2e4,current->fI2S, 8e3,0,8e3,current->fPIN1E);
+    //if(current->Stopped()){
+    //  FillHistogram("pidnosssd_cur", 2e3,0,2e4,current->fI2S, 8e3,0,8e3,current->fPIN1E);
+    //}
+
+
+    //TIter iter(gCuts);
+    //while(TCutG *cut = (TCutG*)iter.Next()) {
+    //  if(!cut->IsInside(current->fI2S,current->fPIN1E)) continue;    
+    //  FillHistogram("pid",cut, 2e3,0,2e4,current->fI2S, 8e3,0,8e3,current->fPIN1E);
+    //  if(current->Stopped()) 
+    //    FillHistogram("pidnosssd",cut, 2e3,0,2e4,current->fI2S, 8e3,0,8e3,current->fPIN1E);
+    //  for(auto &it1 : *vdec) {
+
+    //     FillHistogram("summary",cut, 300,0,300,it1.fDSSDFront[0].GetNumber(), 8000,0,4000,it1.fDSSDFront[0].GetEnergy());
+    //     FillHistogram("summary_raw",cut, 300,0,300,it1.fDSSDFront[0].GetNumber(), 8000,0,64000,it1.fDSSDFront[0].GetCharge());
+    //     FillHistogram("summary",cut, 300,0,300,it1.fDSSDBack[0].GetNumber(), 8000,0,4000,it1.fDSSDBack[0].GetEnergy());
+    //     FillHistogram("summary_raw",cut, 300,0,300,it1.fDSSDBack[0].GetNumber(), 8000,0,64000,it1.fDSSDBack[0].GetCharge());
+
+
+    //    for(auto &it2 : it1.fGe) { 
+    //      double dt = it1.GetTimestamp() - it2.GetTimestamp();
+
+    //      FillHistogram("timedif_decay_gamma",cut,200,-1000,1000,dt);
+    //      FillHistogram("timedif2_decay_gamma",cut,200,-1000,1000,dt,4000,0,4000,it2.GetEnergy());
+
+    //      FillHistogram("summary",cut, 300,0,300,it2.GetNumber(), 8000,0,4000,it2.GetEnergy());
+    //      FillHistogram("summary_raw",cut, 300,0,300,it2.GetNumber(), 8000,0,64000,it2.GetCharge());
+ 
+    //      //double deltatime = fabs(it1.GetTimestamp() - it2.GetTimestamp());
+
+    //      //if(deltatime>40 && deltatime<300){ // Fill gamma spectrum
+    //      if(dt>-200 && dt<300){ // Fill gamma spectrum
+    //        FillHistogram("summary_prompt",cut, 300,0,300,it2.GetNumber(), 8000,0,4000,it2.GetEnergy());
+    //        FillHistogram("summary_prompt_raw",cut, 300,0,300,it2.GetNumber(), 8000,0,64000,it2.GetCharge());
+    //      }
+    //    }
     //  }
     //}
-    for(size_t m=0;m<vdec->size();m++){
-      //if(vdec->at(m).FrontSize()==0) continue;
-      for(auto &it:vdec->at(m).fGe){
-        FillHistogram("single_imptime", 3000,0,1500,vdec->at(m).fImplantTime,8000,0,4000,it.GetEnergy());
-      }
-    }
 
     //=======================================//
     //=======================================//
@@ -229,6 +239,3 @@ void Correlator::FlushAll(bool histogram) {
   }
   return;
 }
-
-
-

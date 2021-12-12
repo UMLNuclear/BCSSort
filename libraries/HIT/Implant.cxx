@@ -205,35 +205,73 @@ TH2 *Implant::Draw(){
     return fl;   
 }
 
-bool Implant::IsGood() const {
-    bool good = true;
-    //if (fPIN1E<=500)good = false;
-    //if (fPIN2E<=200)good = false;
-    //if (fabs(fPIN2E-(2.19451*fPIN1E+52.1161)>1000))good = false;
-    if (FrontSize()<1 || BackSize()<1) good = false;
+bool Implant::IsGood() const { // for 44S, PID + prompt gate*2
+    bool good = false;
+    static std::vector<TCutG*> veccut;
+    if(veccut.size()==0) {
+      TFile *cutf1 = TFile::Open("/home/zhu/packages/BCSSort/root_file/cuts/pidcut_48.root");
+      TCutG * _cut2 = (TCutG *)cutf1->Get("_cut2"); 
+      veccut.push_back(_cut2);// PID for 44S; 
+      TFile *cutf2 = TFile::Open("/home/zhu/packages/BCSSort/root_file/cuts/promptCut_imp0048.root");
+      TCutG * _cut0 = (TCutG *)cutf2->Get("_cut0");
+      TCutG * _cut1 = (TCutG *)cutf2->Get("_cut1");
+      veccut.push_back(_cut0); // TOF vs timedif for 44S;
+      veccut.push_back(_cut1); // Pin1E vs timedif for S;
+    }
+    if(veccut[0]->IsInside(fI2S,fPIN1E)){
+      if(DSSDloT()>0){
+        double dt = DSSDloT() - fPIN1T;
+        dt = dt/1000.;
+        if((veccut[1]->IsInside(dt, fI2S)) && veccut[2]->IsInside(dt, fPIN1E)){
+          good = true;
+        }
+      }  
+    }
 
     return good;
+}
+
+double Implant::DSSDloT() const {
+  double t = -1;
+  if(FrontSize()>0){
+    t = LGFMax().GetTimestamp();
+  }else if(BackSize()>0){
+    t = LGBMax().GetTimestamp();
+  }
+  return t;
+}
+
+DetHit Implant::LGFMax() const {
+  DetHit fhit;
+  double Emax = 0;
+  for(auto &it:fDSSDFront){
+    if(it.GetEnergy()>Emax){
+      fhit = it;
+      Emax = it.GetEnergy();
+    }
+  }
+  return fhit;
+}
+
+DetHit Implant::LGBMax() const {
+  DetHit fhit;
+  double Emax = 0;
+  for(auto &it:fDSSDBack){
+    if(it.GetEnergy()>Emax){
+      fhit = it;
+      Emax = it.GetEnergy();
+    }
+  }
+  return fhit;
 }
 
 std::pair<int, int> Implant::GetPixel() const{
     //printf(__PRETTY_FUNCTION__ );
     //printf("\n");
-    int indexf = (-fDSSDFront[0].GetNumber()+80)-1;
-    int indexb = (-fDSSDBack[0].GetNumber()+160)-1;
-    double tempE = fDSSDFront[0].GetEnergy();
-    for(int z=1;z<FrontSize();z++){
-        if(tempE<fDSSDFront[z].GetEnergy()){
-            tempE = fDSSDFront[z].GetEnergy();
-            indexf = (-fDSSDFront[z].GetNumber()+80)-1;   // from 0~39: FL1->0; FL40->39
-        }
-    }
-    tempE = fDSSDBack[0].GetEnergy();
-    for(int z=1;z<BackSize();z++){
-        if(tempE<fDSSDBack[z].GetEnergy()){
-            tempE = fDSSDBack[z].GetEnergy();
-            indexb = (-fDSSDBack[z].GetNumber()+160)-1;
-        }
-    }
+    int indexf = -1;
+    int indexb = -1;
+    if(FrontSize()>0) indexf = -LGFMax().GetNumber()+79;
+    if(BackSize()>0) indexb  = -LGBMax().GetNumber()+159;
     return std::make_pair(indexf,indexb);
 }
 
@@ -318,48 +356,74 @@ void Decay::Clear(){
 }
 
 
-bool Decay::IsGood() const{
-/*
-    FillHistogram("DSSD_FS",40,0,40,FrontSize());
-    FillHistogram("DSSD_BS",40,0,40,BackSize());
-    for(size_t x=0;x<FrontSize();x++) {
-      for(size_t y=0;y<BackSize();y++) {
-        ///
-        FillHistogram("DSSD_DT_ALL",200,-1000,1000,fDSSDFront[x].GetTimestamp() - fDSSDBack[y].GetTimestamp());
-        if(FrontSize()==1 && BackSize()==1) { 
-          double fhe = fDSSDFront[0].GetEnergy();
-          double bhe = fDSSDBack[0].GetEnergy();
-          if(fabs(fhe-bhe)>=((fhe+bhe)/2)*0.10) continue; 
-            FillHistogram("DSSD_DT_ONES",200,-1000,1000,fDSSDFront[x].GetTimestamp() - fDSSDBack[y].GetTimestamp());
-            FillHistogram("DSSD_DT_ONES_EF",200,-1000,1000,fDSSDFront[x].GetTimestamp() - fDSSDBack[y].GetTimestamp(),
-                         1600,0,16000,fDSSDFront[x].GetCharge());
-            FillHistogram("DSSD_DT_ONES_EB",200,-1000,1000,fDSSDFront[x].GetTimestamp() - fDSSDBack[y].GetTimestamp(),
-                           1600,0,16000,fDSSDBack[x].GetCharge());
-        }
-        ///
+bool Decay::IsPrompt() const{
+    bool good = false;    
+    if(FrontSize()>0 && BackSize()>0){
+      double dt = HGFMax().GetTimestamp() - HGBMax().GetTimestamp();
+      dt = dt/1000.;
+      if(dt>=0.04 && dt<=0.14){
+        good = true;
       }
     }
-*/
 
-    if(FrontSize()!=1) return false;
-    if(BackSize()!=1) return false;
-    double fhe = fDSSDFront[0].GetEnergy();
-    double bhe = fDSSDBack[0].GetEnergy();
-    if(fabs(fhe-bhe)>=((fhe+bhe)/2)*0.10) return false; 
-    double dt=fDSSDFront[0].GetTimestamp() - fDSSDBack[0].GetTimestamp();
-    if( (dt<10) || (dt>170) ) return false;
+    return good;
+}
 
-    return true;
+bool Decay::IsDelay() const{
+    bool good = false;    
+    if(FrontSize()>0 && BackSize()>0){
+      double dt = HGFMax().GetTimestamp() - HGBMax().GetTimestamp();
+      dt = dt/1000.;
+      if(fabs(dt+0.225)<=0.025 || fabs(dt-0.325)<=0.025){
+        good = true;
+      }
+    }
+
+    return good;
+}
+
+double Decay::DSSDhiT() const {
+  double t = -1;
+  if(FrontSize()>0){
+    t = HGFMax().GetTimestamp();
+  }else if(BackSize()>0){
+    t = HGBMax().GetTimestamp();
+  }
+  return t;
+}
+
+DetHit Decay::HGFMax() const {
+  DetHit fhit;
+  double Emax = 0;
+  for(auto &it:fDSSDFront){
+    if(it.GetEnergy()>Emax){
+      fhit = it;
+      Emax = it.GetEnergy();
+    }
+  }
+  return fhit;
+}
+
+DetHit Decay::HGBMax() const {
+  DetHit fhit;
+  double Emax = 0;
+  for(auto &it:fDSSDBack){
+    if(it.GetEnergy()>Emax){
+      fhit = it;
+      Emax = it.GetEnergy();
+    }
+  }
+  return fhit;
 }
 
 std::pair<int,int> Decay::GetPixel() const{
-    //printf(__PRETTY_FUNCTION__ );
-    //printf("\n");
-
-    int indexf = fDSSDFront[0].GetNumber()-1; // 0~39: FH1->0; FH40->39; 
-    int indexb = fDSSDBack[0].GetNumber()-80;
+    int indexf = -1;
+    int indexb = -1;
+    if(FrontSize()>0) indexf = HGFMax().GetNumber();
+    if(BackSize()>0) indexb  = HGBMax().GetNumber()-80;
     return std::make_pair(indexf,indexb); 
 }
+
 
 void Decay::SimplePrint(double dt) const{
     printf("(%02i: %02i) @ %.1f \t FHE = %f\t BHE = %f \t dt(ms) = %.1f\n", fDSSDFront[0].GetNumber(), fDSSDBack[0].GetNumber()-80, fDSSDFront[0].GetTimestamp(), fDSSDFront[0].GetEnergy(), fDSSDBack[0].GetEnergy(), dt*1e-6 );

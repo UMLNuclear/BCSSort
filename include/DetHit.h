@@ -58,16 +58,32 @@ class BCSEvent {
     double PIN1_I2N() const; //pin1_i2n 
     double I2N_I2S() const; 
 
+//return specific hit from DSSD with max energy
+    DetHit LGFMax() const;
+    DetHit LGBMax() const;
+    DetHit HGFMax() const;
+    DetHit HGBMax() const;
+//  DSSD.Time = DSSD.front.maxE.T;
+//  if no DSSD front = DSSD.back.maxE.T;
+//  if no DSSD = return -1;
+    double DSSDloT() const;
+    double DSSDhiT() const;
+
     std::vector<DetHit> LGF() const;
     std::vector<DetHit> LGB() const;
     std::vector<DetHit> HGF() const;
     std::vector<DetHit> HGB() const;
+    std::vector<DetHit> HPGe() const;
+    std::vector<DetHit> LaBr() const;
+    std::vector<DetHit> SSSD() const;
 
     int HGFSize() const;
     int HGBSize() const;
     int LGFSize() const;
     int LGBSize() const;
+    int HPGeSize() const;
     int SSSDSize() const;
+    int SSSDLGSize() const;
 
     int  Size() const { return fHits.size(); }
     void Clear() { fHits.clear(); }
@@ -75,10 +91,11 @@ class BCSEvent {
     int LGPixel() const;
     std::pair<int,int> HGPixel() const;
 
+    TH2D *DrawLG(Option_t *opt="") const;
     TH2D *DrawHG(Option_t *opt="") const;
+    TH2D *DrawSSSD(Option_t *opt="") const;
 
     bool Range(int x,int low, int high) const { return (x>=low && x<=high); }
-    void PrintNumber();
 
   //private:
  

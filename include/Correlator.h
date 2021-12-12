@@ -33,6 +33,7 @@ class Correlator : public TObject{
     void AddEvent(std::vector<DetHit> *event);    
     void AddImplant(std::vector<DetHit> *event);
     void AddDecay(std::vector<DetHit> *event);
+    void AddCloverOnly(std::vector<DetHit> *event);
     pixel Match(pixel dpix, double T);
     void CleanImplantMap(double T);
     void FlushPixel(pixel pix, bool histogram=true);
