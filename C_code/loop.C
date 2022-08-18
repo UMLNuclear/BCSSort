@@ -2,103 +2,147 @@
 
 
 
-{ 
+void loop(){
   TChannel::ReadDetMapFile(); 
-  TChain *chdec = new TChain("decay");
-  Decay *fdec = new Decay;
-  chdec->Add("run0048/10us/no160175_Esssd600/dec_prompt/decay0048-0*");  
-  chdec->SetBranchAddress("Decay", &fdec);
+  TChain *cheve;
+  BCSEvent *fevent;
 
-  TChain *chimp = new TChain("implant");
-  Implant *fimp = new Implant;
-  chimp->Add("run0048/10us/no160175_Esssd600/imp_good/implant0048-0*");  
-  chimp->SetBranchAddress("Implant", &fimp);
+  TChain *chimp;
+  Implant *fimp;
 
-  TChain *chprob = new TChain("beta");
-  TChain *chdelb = new TChain("beta");
-  Beta *fprob = new Beta;
-  Beta *fdelb = new Beta;
-  chprob->Add("run0048/10us/no160175_Esssd600/beta_prompt0048.root");
-  chdelb->Add("run0048/10us/no160175_Esssd600/beta_delay0048.root");
-  chprob->SetBranchAddress("Beta", &fprob);
-  chdelb->SetBranchAddress("Beta", &fdelb);
+  std::vector<TCutG*> veccut;
+  TFile *cutf = TFile::Open("/home/zhu/packages/BCSSort/root_file/cut/prompt_Imp104.root");
+  TCutG *tof_dt = (TCutG *)cutf->Get("tof_dt");
+  TCutG *pin1E_dt = (TCutG *)cutf->Get("pin1E_dt");
+  veccut.push_back(tof_dt); // TOF vs timedif for 44S;
+  veccut.push_back(pin1E_dt); // Pin1E vs timedif for S;
 
-  long x=0;
-  long nimp=chimp->GetEntries();
-  long ndec=chdec->GetEntries();
-  long nprob=chprob->GetEntries();
-  long ndelb=chdelb->GetEntries();
+  TFile *cutf2 = TFile::Open("/home/zhu/packages/BCSSort/root_file/cut/pidcut104.root");
+  TCutG *Na = (TCutG *)cutf2->Get("Na");
+  TCutG *Ne = (TCutG *)cutf2->Get("Ne");
 
-  double low, high=0;
-  bool cflag = false;
-  int c1 = 0;
-  int c2 = 0;
-  int c3 = 0;
-  int c4 = 0;
-  int c5 = 0;
-  int c6 = 0;
-  int c7 = 0;
-  int c8 = 0;
-  int c9 = 0;
-  int c10 = 0;
-  int c11 = 0;
-  int c12 = 0;
-  int c13 = 0;
-  int c14 = 0;
-  int c15 = 0;
-  int c16 = 0;
-  int c17 = 0;
-  int c18 = 0;
-  int c19 = 0;
-  int c20 = 0;
-  int c21 = 0;
-  int c22 = 0;
-  int c23 = 0;
-  int c24 = 0;
-  int c25 = 0;
-  int c26 = 0;
-  int c27 = 0;
-  TH2D *h1 = new TH2D("single_uncal","single_uncal",16e3,0,32e3, 100,200,300);
-  TH2D *h2 = new TH2D("single_cal","single_cal",5e3,0,10e3, 100,200,300);
-  TH2D *h3 = new TH2D("single_un_gated","single_un_gated",16e3,0,32e3, 100,200,300);
-  //TH1D *h4 = new TH1D("single_cal","single_cal",5e3,0,10e3);
+  ofstream ofile;
+  ofile.open("good_imp_counter.txt");
+  ofile<<setw(5)<<"runnum"     <<"\t"
+       <<setw(5)<<"2gates "    <<"\t"
+       <<setw(5)<<"2gates+fbl "<<"\t"
+       <<setw(5)<<"beta_imp "<<"\t"
+       <<setw(5)<<"mul_pin1 "<<"\t"
+       <<setw(5)<<"mul_tof "<<std::endl;
 
-  double dt;
-  for(x=0;x<nprob;x++){
-    chprob->GetEntry(x);
-    bool flag = false;
-    if(fprob->DecaySize()>0) c1++;
-    for(auto &it1:fprob->fDecay){
-      if(it1.fGe.size()==0) continue;
-      for(auto &it2:it1.fGe){
-        if(it2.GetEnergy()<10 || it2.GetEnergy()<4000) continue;
-        flag = true;
-        break;
-      }
+  for(int runnum=1023;runnum<1140;runnum++){
+    cheve = new TChain("event");
+    fevent = new BCSEvent;
+    cheve->Add(Form("data/5us_tofcor/event/event%i*",runnum));
+    cheve->SetBranchAddress("BCSEvent", &fevent);
+
+    chimp = new TChain("implant");
+    fimp = new Implant;
+    chimp->Add(Form("data/5us_tofcor/implant/imp_good/implant%i*",runnum));
+    chimp->SetBranchAddress("Implant", &fimp);
+
+    long x=0;
+    long neve=cheve->GetEntries();  
+    long nimp=chimp->GetEntries();  
+
+    if(neve<1 || nimp<1) continue;
+
+
+    double low, high, dt=0;
+    long c1 = 0;
+    long c2 = 0;
+    long c3 = 0;
+    long c4 = 0;
+    long c5 = 0;
+    long c6 = 0;
+    long c7 = 0;
+    long c8 = 0;
+    long c9 = 0;
+    long c10 = 0;
+    long c11 = 0;
+    long c12 = 0;
+    long c13 = 0;
+    long c14 = 0;
+    long c15 = 0;
+    long c16 = 0;
+    long c17 = 0;
+    long c18 = 0;
+    long c19 = 0;
+    long c20 = 0;
+    long c21 = 0;
+    long c22 = 0;
+    long c23 = 0;
+    long c24 = 0;
+    long c25 = 0;
+    long c26 = 0;
+    long c27 = 0;
+
+    bool cflag = false;
+    bool hasDSSD = false;
+
+
+    for(x=0;x<neve;x++){
+      cheve->GetEntry(x);
+      if(fevent->Pin1E()<=0) continue;
+      if(fevent->DSSDloT()<=0) continue;
+      dt = fevent->DSSDloT() - fevent->Pin1T();
+      dt = dt/1000.;
+      if(veccut[0]->IsInside(dt,fevent->I2S()) && veccut[1]->IsInside(dt,fevent->Pin1E())){
+        c1++;
+        if(fevent->LGFSize()>0 && fevent->LGBSize()>0){
+          c2++;
+          c10 = 0;
+          c11 = 0;
+          for(auto &it:fevent->fHits){
+            if(it.GetNumber()==181) c10++;
+            if(it.GetNumber()==177) c11++;
+          }
+          if(c10>1) c5++;
+          if(c11>1) c6++;
+        }
+      } 
     }
-    if(flag) c2++;
-  }
-  for(x=0;x<ndelb;x++){
-    chdelb->GetEntry(x);
-    bool flag = false;
-    if(fdelb->DecaySize()==0) continue;
-    c3++;
-    for(auto &it1:fdelb->fDecay){
-      if(it1.fGe.size()==0) continue;
-      for(auto &it2:it1.fGe){
-        if(it2.GetEnergy()<10 || it2.GetEnergy()<4000) continue;
-        flag = true;
-        break;
-      }
+
+    for(x=0;x<nimp;x++){
+      chimp->GetEntry(x);
+      if(fimp->fDSSDFront.size()>0 && fimp->fDSSDBack.size()>0){
+        c3++;
+        dt = fimp->DSSDloT() - fimp->fPIN1T;
+        dt = dt/1000.;
+        if(veccut[0]->IsInside(dt,fimp->fI2S) && veccut[1]->IsInside(dt,fimp->fPIN1E)){
+          c4++;
+        }
+      }  
     }
-    if(flag) c4++;
+
+
+
+    //std::cout<<std::endl;
+    //std::cout<< "(Eve) good imp gate*2= " << c1 << std::endl;
+    //std::cout<< "(Eve) good imp gate*2 + LGF&&LGB>0 = " << c2 << std::endl;
+    //std::cout<< "(Eve) good imp gate*2 + LGF&&LGB>0 + mul_pin1= " << c5 << std::endl;
+    //std::cout<<std::endl;
+    //std::cout<< "(Good Imp) total entries = " << nimp << std::endl;
+    //std::cout<< "(Good Imp) LGF && LGB >0 = " << c3 << std::endl;
+    //std::cout<< "(Good Imp) LGF && LGB >0 && FilterPixel = " << c4 << std::endl;
+    //std::cout<<std::endl;
+
+    ofile<<setw(5)<<runnum<<"\t\t"
+         <<setw(5)<<c1    <<"\t\t" 
+         <<setw(5)<<c3    <<"\t\t" 
+         <<setw(5)<<c4    <<"\t\t"
+         <<setw(5)<<c5    <<"\t\t"
+         <<setw(5)<<c6    <<std::endl;
+
   }
-  
-  std::cout<< "total entries of prompt correlation = "<< nprob<< std::endl;
-  std::cout<< "Prompt correlation with nonzero decay = " << c1 << std::endl;
-  std::cout<< "beta count with decays which have good gamma = " << c2 << std::endl;
-  std::cout<<std::endl;
-  std::cout<< "total entries of delay correlation = "<< ndelb<< std::endl;
-  std::cout<< "Delay correlation with nonzero decay = " << c3 << std::endl;
-  std::cout<< "beta count with decays which have good gamma = " << c4 << std::endl;
-} 
+  ofile.close();
+  return;
+
+}
+
+
+
+
+
+
+

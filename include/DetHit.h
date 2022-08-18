@@ -29,15 +29,15 @@ class DetHit{
     double GetTimestamp() const { return timestamp; }
 
  
-    double GetEnergy() const;
-    
+    double GetEnergy(bool recal = false) const;
+    void Clear(); 
 
   private:    
     int address;
     int number;
     double timestamp;
     double charge;
-
+    mutable double energy; //!  this comment means it will NOT be written in the tree.
 
   ClassDef(DetHit,2)
 };
@@ -96,7 +96,7 @@ class BCSEvent {
     TH2D *DrawSSSD(Option_t *opt="") const;
 
     bool Range(int x,int low, int high) const { return (x>=low && x<=high); }
-
+    void Print();
   //private:
  
     std::vector<DetHit> fHits;

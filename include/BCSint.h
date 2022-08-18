@@ -28,8 +28,10 @@ class BCSint : public TRint {
     //void OpenRootFile(std::string fname); 
 
     void DoSort(); // organize data: dchan->beta & event;
-    void ListSort(); // organize data: dchan->DetHit
     void EventSort(); // organize data: dchan->DetHit
+    void Correlation(); //organize data: input(event)-> call(implant&decay)-> build beta;
+    void BetaSort(); // from beta to beta: by beta_tof correction.
+    void QuickBetaSort();
 
     int UpdateFileCount() { fFileCount++; return fFileCount-1; }
 

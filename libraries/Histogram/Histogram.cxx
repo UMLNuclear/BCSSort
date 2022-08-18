@@ -9,7 +9,9 @@
 #include <TFile.h>
 #include <TF1.h>
 #include <TH2.h>
+#include <TH3.h>
 #include <TChain.h>
+#include <TCutG.h>
 
 #include <Histogram.h>
 #include <OutputManager.h>
@@ -39,6 +41,533 @@ Histogram *Histogram::Get(){
 Histogram::Histogram(){};
 Histogram::~Histogram(){};
 
+//========================== Beta Sort ===============================//
+
+void Histogram::BetaTOF(){
+
+  std::string runnum = GetRunNumber(gROOT->GetListOfFiles()->At(0)->GetName());
+  TChain *beta = new TChain("beta");
+  beta->Add(Form("/home/zhu/packages/BCSSort/data/5us_tofcor/beta/beta_good_prompt/beta%s*.root",runnum.c_str()));
+  Beta *fbeta = new Beta;
+  beta->SetBranchAddress("Beta",&fbeta);
+  TChannel::ReadDetMapFile();
+  runnum = runnum.substr(0,4);
+  std::vector<double> toflin_Na = TOFCorrection::Get()->ReadFile(std::stoi(runnum), "/home/zhu/packages/BCSSort/config/TOF/TOF_beta_Na_lin.txt");
+  std::vector<double> tofoff_Na = TOFCorrection::Get()->ReadFile(std::stoi(runnum), "/home/zhu/packages/BCSSort/config/TOF/TOF_beta_Na_offset.txt");
+
+
+  TFile *cutf = TFile::Open("/home/zhu/packages/BCSSort/root_file/cut/pid_cut.root");
+  TCutG *Na = (TCutG *)cutf->Get("Na"); 
+  TCutG *Ne = (TCutG *)cutf->Get("Ne"); 
+
+  long x=0;
+  long n = beta->GetEntries();
+
+  for(x=0;x<n;x++){
+    beta->GetEntry(x);
+    FillHistogram("tof",500,11000,16000,fbeta->fImplant.fI2S);
+    FillHistogram("tof_entry",n,0,n,x, 500,11000,16000,fbeta->fImplant.fI2S);
+    if(Na->IsInside(fbeta->fImplant.fI2S, fbeta->fImplant.fPIN1E)){
+      double tofNa = fbeta->fImplant.fI2S;
+      FillHistogram("tof_Na_before", 500,11000,16000,tofNa);
+      double tofNa1 = toflin_Na[0] + toflin_Na[1]*tofNa;
+      FillHistogram("tof_Na_linear", 500,11000,16000,tofNa1);
+      double tofNa0 = tofoff_Na[0] + tofNa;
+      FillHistogram("tof_Na_offset", 500,11000,16000,tofNa0);
+    }
+    if(Ne->IsInside(fbeta->fImplant.fI2S, fbeta->fImplant.fPIN1E)){
+      FillHistogram("tof_Ne", 900,11000,15500,fbeta->fImplant.fI2S);
+    }
+    if((x%20000)==0) {
+      printf("on entry %lu / %lu   \r",x,n);
+      fflush(stdout);
+    }
+
+  }
+
+  printf("   on entry %lu / %lu   \n",x,n);
+  SaveHistograms(Form("beta_tof%s.root",runnum.c_str()));
+
+}
+
+
+void Histogram::Beta3DPID(){
+  std::string runnum = GetRunNumber(gROOT->GetListOfFiles()->At(0)->GetName());
+  runnum = runnum.substr(0,4);
+  TChain *beta = new TChain("beta");
+  beta->Add(Form("/home/zhu/packages/BCSSort/data/5us_tofcor/beta/beta_good_prompt_exdTOF_tofcor/correlation1bestT/beta%s*.root",runnum.c_str()));
+  Beta *fbeta = new Beta;
+  beta->SetBranchAddress("Beta",&fbeta);
+  TChannel::ReadDetMapFile();
+
+  long x=0;
+  long entries = beta->GetEntries();
+  double tofbd = 8000;
+
+  for(x=0;x<entries;x++){
+    fbeta->Clear();
+    beta->GetEntry(x);
+    Implant fimp = fbeta->fImplant;
+    double tof = fimp.fI2S;
+    double i2 = fimp.fI2S_I2N;
+    double pin1e = fimp.fPIN1E;
+    for(int d=0;d<fbeta->DecaySize();d++){
+      double decaytime = fbeta->fDecay[d].fDecayTime;
+      if(decaytime>500) continue;
+      FillHistogram("PID_dt",800,tofbd,tofbd+8000,tof, 300,4500,7500,fimp.fPIN1E, 500,0,500,decaytime);
+      for(int m=0;m<fbeta->fDecay[d].GeSize();m++){
+        double e = fbeta->fDecay[d].fGe[m].GetEnergy();
+        if(decaytime>500) continue;
+        if(e>=882 && e<=888){
+          FillHistogram("PID_dt_885",800,tofbd,tofbd+8000,tof, 300,4500,7500,fimp.fPIN1E, 500,0,500,decaytime);
+        }       
+        if(e>=900 && e<=906){
+          FillHistogram("PID_dt_BGR885",800,tofbd,tofbd+8000,tof, 300,4500,7500,fimp.fPIN1E, 500,0,500,decaytime);
+        }       
+        if(decaytime>300) continue;
+        if(e>=146 && e<=152){
+          FillHistogram("PID_dt_150",800,tofbd,tofbd+8000,tof, 300,4500,7500,fimp.fPIN1E, 500,0,500,decaytime);
+        }       
+        if(e>=156 && e<=162){
+          FillHistogram("PID_dt_BGR150",800,tofbd,tofbd+8000,tof, 300,4500,7500,fimp.fPIN1E, 500,0,500,decaytime);
+        }       
+      }
+    } 
+    if((x%5000)==0) {
+      printf("on entry %lu / %lu   \r",x,entries);
+      fflush(stdout);
+    }
+  }
+  printf("   on entry %lu / %lu   \n",x,entries);
+  SaveHistograms(Form("beta_prompt_op%s.root",runnum.c_str()));
+
+  return;
+}
+
+
+
+void Histogram::Beta150GateTOF(){
+
+  std::string runnum = GetRunNumber(gROOT->GetListOfFiles()->At(0)->GetName());
+  runnum = runnum.substr(0,4);
+  TChain *beta = new TChain("beta");
+  beta->Add(Form("/home/zhu/packages/BCSSort/data/5us_tofcor/beta/beta_good_prompt_exdTOF_tofcor/correlation1bestT/beta%s*.root",runnum.c_str()));
+  Beta *fbeta = new Beta;
+  beta->SetBranchAddress("Beta",&fbeta);
+  TChannel::ReadDetMapFile();
+
+  long x=0;
+  long entries = beta->GetEntries();
+  int tofbd = 6000;
+  double slope = -0.24190693;
+  double offset = 9071.3105;
+  double tof2;
+  double partof2  = -0.257303; //tan(TOF = tan*i2)
+  for(0;x<entries;x++){
+    fbeta->Clear();
+    beta->GetEntry(x);
+    Implant fimp = fbeta->fImplant;
+    double tof = fimp.fI2S;
+    double i2 = fimp.fI2S_I2N;
+    double pin1e = fimp.fPIN1E;
+    double jug = slope*tof + offset;
+    for(int d=0;d<fbeta->DecaySize();d++){
+      double decaytime = fbeta->fDecay[d].fDecayTime;
+      if(decaytime>60) continue;
+      for(int m=0;m<fbeta->fDecay[d].GeSize();m++){
+        double e = fbeta->fDecay[d].fGe[m].GetEnergy();
+        if(e<10 || e>4000) continue;
+        if(pin1e<jug){
+          if(decaytime<30){
+            FillHistogram("singles30ms_TOF_Ne",2000,tofbd,tofbd+20000,tof, 4000,0,4000,e);
+          }
+          if(e>=146 && e<=152){//150keV
+            if(decaytime<30){
+              FillHistogram("pid_30ms_150",   2000,tofbd,tofbd+20000,tof, 300,4500,7500,fimp.fPIN1E);
+              FillHistogram("dt_TOF_30ms_150",2000,tofbd,tofbd+20000,tof, 3000,0,30,decaytime);  
+              if(i2>10000 && i2<16000){
+                tof2 = tof - partof2*i2; 
+                FillHistogram("pid_30ms_150_tofCor",   2000,tofbd,tofbd+20000,tof2, 300,4500,7500,fimp.fPIN1E);
+                FillHistogram("dt_TOF_30ms_150_tofCor",2000,tofbd,tofbd+20000,tof2, 3000,0,30,decaytime);  
+              }
+            }
+          }
+          if(e>=154 && e<=160){//BGR_150keV
+            if(decaytime<30){
+              FillHistogram("pid_30ms_BGR150",   2000,tofbd,tofbd+20000,tof, 300,4500,7500,fimp.fPIN1E);
+              FillHistogram("dt_TOF_30ms_BGR150",2000,tofbd,tofbd+20000,tof, 3000,0,30,decaytime);  
+              if(i2>10000 && i2<16000){
+                tof2 = tof - partof2*i2; 
+                FillHistogram("pid_30ms_BGR150_tofCor",   2000,tofbd,tofbd+20000,tof2, 300,4500,7500,fimp.fPIN1E);
+                FillHistogram("dt_TOF_30ms_bgR150_tofCor",2000,tofbd,tofbd+20000,tof2, 3000,0,30,decaytime);  
+              }
+            }
+          }
+          if(e>=152 && e<=188){//BGR_150keV
+            if(decaytime<30){
+              FillHistogram("pid_30ms_extBGR150",   2000,tofbd,tofbd+20000,tof, 300,4500,7500,fimp.fPIN1E);
+              FillHistogram("dt_TOF_30ms_extBGR150",2000,tofbd,tofbd+20000,tof, 3000,0,30,decaytime);  
+              if(i2>10000 && i2<16000){
+                tof2 = tof - partof2*i2; 
+                FillHistogram("pid_30ms_extBGR150_tofCor",   2000,tofbd,tofbd+20000,tof2, 300,4500,7500,fimp.fPIN1E);
+                FillHistogram("dt_TOF_30ms_extBGR150_tofCor",2000,tofbd,tofbd+20000,tof2, 3000,0,30,decaytime);  
+              }
+            }
+          }
+        }else{
+          if(decaytime<60){
+            FillHistogram("singles60ms_TOF_Na",2000,tofbd,tofbd+20000,tof, 4000,0,4000,e);
+          }
+          if(e>=882 && e<=888){//885keV
+            if(decaytime<60){
+              FillHistogram("pid_60ms_885",   2000,tofbd,tofbd+20000,tof, 300,4500,7500,fimp.fPIN1E);
+              FillHistogram("dt_TOF_60ms_885",2000,tofbd,tofbd+20000,tof, 6000,0,60,decaytime);  
+              if(i2>10000 && i2<16000){
+                tof2 = tof - partof2*i2; 
+                FillHistogram("pid_60ms_885_tofCor",   2000,tofbd,tofbd+20000,tof2, 300,4500,7500,fimp.fPIN1E);
+                FillHistogram("dt_TOF_60ms_885_tofCor",2000,tofbd,tofbd+20000,tof2, 6000,0,60,decaytime);  
+              }
+            }
+          }
+          if(e>=900 && e<=906){//BGR_885keV
+            if(decaytime<60){
+              FillHistogram("pid_60ms_BGR885",   2000,tofbd,tofbd+20000,tof, 300,4500,7500,fimp.fPIN1E);
+              FillHistogram("dt_TOF_60ms_BGR885",2000,tofbd,tofbd+20000,tof, 6000,0,60,decaytime);  
+              if(i2>10000 && i2<16000){
+                tof2 = tof - partof2*i2; 
+                FillHistogram("pid_60ms_BGR885_tofCor",   2000,tofbd,tofbd+20000,tof2, 300,4500,7500,fimp.fPIN1E);
+                FillHistogram("dt_TOF_60ms_BGR885_tofCor",2000,tofbd,tofbd+20000,tof2, 6000,0,60,decaytime);  
+              }
+            }
+          }
+        }
+      }
+    }
+    if((x%5000)==0) {
+      printf("on entry %lu / %lu   \r",x,entries);
+      fflush(stdout);
+    }
+
+
+  }
+  printf("   on entry %lu / %lu   \n",x,entries);
+  SaveHistograms(Form("beta_prompt_op%s.root",runnum.c_str()));
+
+  return;
+}
+
+
+
+void Histogram::BetaPID(){
+
+  std::string runnum = GetRunNumber(gROOT->GetListOfFiles()->At(0)->GetName());
+  runnum = runnum.substr(0,4);
+  TChain *beta = new TChain("beta");
+  beta->Add(Form("/home/zhu/packages/BCSSort/data/5us_tofcor/beta/beta_good_prompt_exdTOF_tofcor/correlation1bestT/beta%s*.root",runnum.c_str()));
+  Beta *fbeta = new Beta;
+  beta->SetBranchAddress("Beta",&fbeta);
+  TChannel::ReadDetMapFile();
+
+  long x=0;
+  long entries = beta->GetEntries();
+  double dE, dnum, dt, sumE;
+
+  //========== PID cuts for Ne Chain ===========//
+  TList *gList = new TList();
+  TCutG *cutg;
+
+  //==== PID cuts for Na chain ====//
+  double lna = 700;
+  double wna = 800;
+  double horna = 230;
+  double verna = 40;
+  for(int i=0;i<10;i++){
+    double start[2] = {15700,6260};
+    start[0] += i*horna;
+    start[1] -= i*verna;
+    cutg = new TCutG(Form("recna%i",i),5);
+    cutg->SetPoint(0,start[0],start[1]);
+    cutg->SetPoint(1,start[0]+lna,start[1]);
+    cutg->SetPoint(2,start[0]+lna,start[1]+wna);
+    cutg->SetPoint(3,start[0],start[1]+wna);
+    cutg->SetPoint(4,start[0],start[1]);
+    gList->Add(cutg);
+  }
+  for(int i=0;i<16;i++){
+    double start[2] = {13500,5460};
+    start[0] += i*horna;
+    start[1] -= i*verna;
+    cutg = new TCutG(Form("rec%i",i),5);
+    cutg->SetPoint(0,start[0],start[1]);
+    cutg->SetPoint(1,start[0]+lna,start[1]);
+    cutg->SetPoint(2,start[0]+lna,start[1]+wna);
+    cutg->SetPoint(3,start[0],start[1]+wna);
+    cutg->SetPoint(4,start[0],start[1]);
+    gList->Add(cutg);
+  }
+
+  TCutG *NaCut = new TCutG("NaCut",5);
+  NaCut->SetPoint(0,15200,6300);
+  NaCut->SetPoint(1,15200,7300);
+  NaCut->SetPoint(2,19500,6600);
+  NaCut->SetPoint(3,19500,5600);
+  NaCut->SetPoint(4,15200,6300);
+
+  TCutG *NeCut = new TCutG("NeCut",5);
+  NeCut->SetPoint(0,13500,5400);
+  NeCut->SetPoint(1,13500,6400);
+  NeCut->SetPoint(2,19100,5500);
+  NeCut->SetPoint(3,19100,4500);
+  NeCut->SetPoint(4,13500,5400);
+
+  double partof1 = -0.272716;  //tan(TOF = tan*i2)
+  double partof2  = -0.257303; //tan(TOF = tan*i2)
+  double tof1, tof2;
+  int tofbd = 6000;
+  for(x=0;x<entries;x++){
+    fbeta->Clear();
+    beta->GetEntry(x);
+    Implant fimp = fbeta->fImplant;
+    double tof = fimp.fI2S;
+    double i2 = fimp.fI2S_I2N;
+    double pin1e = fimp.fPIN1E;
+
+    FillHistogram("pid",2000,tofbd,tofbd+20000,tof, 300,4500,7500,pin1e);
+    FillHistogram("i2_tof", 2000,tofbd,tofbd+20000,tof, 4000,0,40000,i2);
+    FillHistogram("tof_i2",4000,0,40000,i2,   2000,tofbd,tofbd+20000,tof);
+    FillHistogram("pin1_i2", 4000,0,40000,i2,300,4500,7500,pin1e);
+    if(i2>10000 && i2<16000){
+      FillHistogram("pid_before",2000,tofbd,tofbd+20000,tof, 300,4500,7500,pin1e);
+      FillHistogram("i2_before", 2000,tofbd,tofbd+20000,tof, 2000,5000,25000,i2);
+      FillHistogram("tof_before",4000,0,40000,i2,   2000,tofbd,tofbd+20000,tof);
+      tof2 = tof - partof2*i2; 
+      FillHistogram("pid_Pafter",2000,tofbd,tofbd+20000,tof2, 300,4500,7500,pin1e);
+      FillHistogram("i2_Pafter", 2000,tofbd,tofbd+20000,tof2, 3000,0,30000,i2);
+      FillHistogram("tof_Pafter",3000,0,30000,i2,             2000,tofbd,tofbd+20000,tof2);
+    }
+    for(int d=0;d<fbeta->DecaySize();d++){
+      double decaytime = fbeta->fDecay[d].fDecayTime;
+      if(decaytime>1000) continue;
+      for(int m=0;m<fbeta->fDecay[d].GeSize();m++){
+        double e = fbeta->fDecay[d].fGe[m].GetEnergy();
+        if(e<10 || e>4000) continue;
+        FillHistogram("dt_singles",1000,0,1000,decaytime,4000,0,4000,e);
+        if(fimp.fI2S_I2N==32768){
+          FillHistogram("dt_singles_i2",1000,0,1000,decaytime,4000,0,4000,e);
+        }
+        if(fimp.fI2S_I2N==0){
+          FillHistogram("dt_singles_i20",1000,0,1000,decaytime,4000,0,4000,e);
+        }
+        if(e>=882 && e<=888){//885keV
+          if(decaytime<100){
+            FillHistogram("pid_100ms_885W",    2000,tofbd,tofbd+20000,tof, 300,4500,7500,fimp.fPIN1E);
+            FillHistogram("I2_TOF_100ms_885W", 2000,tofbd,tofbd+20000,tof, 3000,0,30000,fimp.fI2S_I2N);
+          }
+        }
+        if(e>=900 && e<=906){//BGR_885keV
+          if(decaytime<100){
+            FillHistogram("pid_100ms_BGR885W",    2000,tofbd,tofbd+20000,tof, 300,4500,7500,fimp.fPIN1E);
+            FillHistogram("I2_TOF_100ms_BGR885W", 2000,tofbd,tofbd+20000,tof, 3000,0,30000,fimp.fI2S_I2N);
+          }
+        }
+        if(e>=146 && e<=152){//150keV
+          if(decaytime<50){
+            FillHistogram("pid_50ms_150W",    2000,tofbd,tofbd+20000,tof, 300,4500,7500,fimp.fPIN1E);
+            FillHistogram("I2_TOF_50ms_150W", 2000,tofbd,tofbd+20000,tof, 3000,0,30000,fimp.fI2S_I2N);
+          }
+        }
+        if(e>=156 && e<=162){//BGR_150keV
+          if(decaytime<50){
+            FillHistogram("pid_50ms_BGR150W",    2000,tofbd,tofbd+20000,tof, 300,4500,7500,fimp.fPIN1E);
+            FillHistogram("I2_TOF_50ms_BGR150W", 2000,tofbd,tofbd+20000,tof, 3000,0,30000,fimp.fI2S_I2N);
+          }
+        }
+        if(i2>10000 && i2<16000){
+          if(e>=882 && e<=888){//885keV
+            if(decaytime<100){
+              FillHistogram("pid_100ms_885",    2000,tofbd,tofbd+20000,tof, 300,4500,7500,fimp.fPIN1E);
+              FillHistogram("I2_TOF_100ms_885", 2000,tofbd,tofbd+20000,tof, 3000,0,30000,fimp.fI2S_I2N);
+              FillHistogram("pid_100ms_885_cor",    2000,tofbd,tofbd+20000,tof2, 300,4500,7500,fimp.fPIN1E);
+              FillHistogram("I2_TOF_100ms_885_cor", 2000,tofbd,tofbd+20000,tof2, 3000,0,30000,fimp.fI2S_I2N);
+            }
+          }
+          if(e>=900 && e<=906){//BGR_885keV
+            if(decaytime<100){
+              FillHistogram("pid_100ms_BGR885",    2000,tofbd,tofbd+20000,tof, 300,4500,7500,fimp.fPIN1E);
+              FillHistogram("I2_TOF_100ms_BGR885", 2000,tofbd,tofbd+20000,tof, 3000,0,30000,fimp.fI2S_I2N);
+              FillHistogram("pid_100ms_BGR885_cor",    2000,tofbd,tofbd+20000,tof2, 300,4500,7500,fimp.fPIN1E);
+              FillHistogram("I2_TOF_100ms_BGR885_cor", 2000,tofbd,tofbd+20000,tof2, 3000,0,30000,fimp.fI2S_I2N);
+            }
+          }
+          if(e>=864 && e<=870){//BGL_885keV
+            if(decaytime<100){
+              FillHistogram("pid_100ms_BGL885",    2000,tofbd,tofbd+20000,tof, 300,4500,7500,fimp.fPIN1E);
+              FillHistogram("I2_TOF_100ms_BGL885", 2000,tofbd,tofbd+20000,tof, 3000,0,30000,fimp.fI2S_I2N);
+              FillHistogram("pid_100ms_BGL885_cor",    2000,tofbd,tofbd+20000,tof2, 300,4500,7500,fimp.fPIN1E);
+              FillHistogram("I2_TOF_100ms_BGL885_cor", 2000,tofbd,tofbd+20000,tof2, 3000,0,30000,fimp.fI2S_I2N);
+            }
+          }
+          if(e>=146 && e<=152){//150keV
+            if(decaytime<50){
+              FillHistogram("pid_50ms_150",    2000,tofbd,tofbd+20000,tof, 300,4500,7500,fimp.fPIN1E);
+              FillHistogram("I2_TOF_50ms_150", 2000,tofbd,tofbd+20000,tof, 3000,0,30000,fimp.fI2S_I2N);
+              FillHistogram("pid_50ms_150_cor",    2000,tofbd,tofbd+20000,tof2, 300,4500,7500,fimp.fPIN1E);
+              FillHistogram("I2_TOF_50ms_150_cor", 2000,tofbd,tofbd+20000,tof2, 3000,0,30000,fimp.fI2S_I2N);
+            }
+          }
+          if(e>=156 && e<=162){//BGR_150keV
+            if(decaytime<50){
+              FillHistogram("pid_50ms_BGR150",    2000,tofbd,tofbd+20000,tof, 300,4500,7500,fimp.fPIN1E);
+              FillHistogram("I2_TOF_50ms_BGR150", 2000,tofbd,tofbd+20000,tof, 3000,0,30000,fimp.fI2S_I2N);
+              FillHistogram("pid_50ms_BGR150_cor",    2000,tofbd,tofbd+20000,tof2, 300,4500,7500,fimp.fPIN1E);
+              FillHistogram("I2_TOF_50ms_BGR150_cor", 2000,tofbd,tofbd+20000,tof2, 3000,0,30000,fimp.fI2S_I2N);
+            }
+          }
+          if(e>=136 && e<=142){//BGL_150keV
+            if(decaytime<50){
+              FillHistogram("pid_50ms_BGL150",    2000,tofbd,tofbd+20000,tof, 300,4500,7500,fimp.fPIN1E);
+              FillHistogram("I2_TOF_50ms_BGL150", 2000,tofbd,tofbd+20000,tof, 3000,0,30000,fimp.fI2S_I2N);
+              FillHistogram("pid_50ms_BGL150_cor",    2000,tofbd,tofbd+20000,tof2, 300,4500,7500,fimp.fPIN1E);
+              FillHistogram("I2_TOF_50ms_BGL150_cor", 2000,tofbd,tofbd+20000,tof2, 3000,0,30000,fimp.fI2S_I2N);
+            }
+          }
+        }
+      }
+    }
+
+
+    if((x%5000)==0) {
+      printf("on entry %lu / %lu   \r",x,entries);
+      fflush(stdout);
+    }
+
+
+  }
+  printf("   on entry %lu / %lu   \n",x,entries);
+  SaveHistograms(Form("beta_prompt_op%s.root",runnum.c_str()));
+
+
+}
+
+void Histogram::BetaSort(){
+
+
+  std::map<int,double[4][4]> xtalmat = ReadMat();    
+
+  std::string runnum = GetRunNumber(gROOT->GetListOfFiles()->At(0)->GetName());
+  runnum = runnum.substr(0,4);
+  TChain *beta = new TChain("beta");
+  beta->Add(Form("/home/zhu/packages/BCSSort/data/5us_tofcor/beta/beta_good_prompt_exdTOF_tofcor/correlation0bestT/beta%s*.root",runnum.c_str()));
+  Beta *fbeta = new Beta;
+  beta->SetBranchAddress("Beta",&fbeta);
+  TChannel::ReadDetMapFile();
+
+  TFile *cutf = TFile::Open("/home/zhu/packages/BCSSort/root_file/cut/pid_Na32cut.root");
+  TCutG *Na32 = (TCutG *)cutf->Get("Na32");
+  TFile *cutf1 = TFile::Open("/home/zhu/packages/BCSSort/root_file/cut/pid_Ne_slide554.root");
+  TCutG *Ne30 = (TCutG *)cutf1->Get("ne30");
+  TCutG *Ne31 = (TCutG *)cutf1->Get("ne31");
+
+
+  long x=0;
+  long entries = beta->GetEntries();
+  double dE, dnum, dt, sumE;
+
+
+
+  double partof1 = -0.272716;  //tan(TOF = tan*i2)
+  double partof2  = -0.257303; //tan(TOF = tan*i2)
+  double tof1, tof2;
+  int tofbd = 6000;
+  for(x=0;x<entries;x++){
+    fbeta->Clear();
+    beta->GetEntry(x);
+    Implant fimp = fbeta->fImplant;
+    double tof = fimp.fI2S;
+    double i2 = fimp.fI2S_I2N;
+    double pin1e = fimp.fPIN1E;
+
+    FillHistogram("pid_before",2000,tofbd,tofbd+20000,tof, 300,4500,7500,pin1e);
+    tof2 = tof; 
+
+    if(Na32->IsInside(tof2, fimp.fPIN1E)){
+      FillHistogram(Form("PID_%s",Na32->GetName()),2000,tofbd,tofbd+20000,tof2, 300,4500,7500,fimp.fPIN1E);
+      for(int d=0;d<fbeta->DecaySize();d++){
+        double decaytime = fbeta->fDecay[d].fDecayTime;
+        FillHistogram(Form("decaytime_%s",Na32->GetName()),10000,0,1000,decaytime);
+        if(decaytime>3000) continue;
+        std::map<int, Clover> clmap;
+        for(int m=0;m<fbeta->fDecay[d].GeSize();m++){
+          double gamEm = fbeta->fDecay[d].fGe[m].GetEnergy();
+          if(gamEm<10 || gamEm>4000) continue;
+          int clnum = (fbeta->fDecay[d].fGe[m].GetNumber()-208)/4;
+          clmap[clnum].Add(fbeta->fDecay[d].fGe[m]);
+          if(decaytime<500){
+            FillHistogram(Form("dt_singles_%s",Na32->GetName()), 500,0,500,decaytime, 4000,0,4000,gamEm);
+          }
+          for(int n=m+1;n<fbeta->fDecay[d].GeSize();n++){// ggmat start
+            double gamEn = fbeta->fDecay[d].fGe[n].GetEnergy();
+            if(gamEn<10 || gamEn>4000) continue;
+            if(decaytime<=50){
+              FillHistogram(Form("ggmat50ms_%s",Na32->GetName()), 4000,0,4000,gamEm, 4000,0,4000,gamEn);
+              FillHistogram(Form("ggmat50ms_%s",Na32->GetName()), 4000,0,4000,gamEn, 4000,0,4000,gamEm);
+            }
+            if(decaytime<=70){
+              FillHistogram(Form("ggmat70ms_%s",Na32->GetName()), 4000,0,4000,gamEm, 4000,0,4000,gamEn);
+              FillHistogram(Form("ggmat70ms_%s",Na32->GetName()), 4000,0,4000,gamEn, 4000,0,4000,gamEm);
+            }
+            if(decaytime<=100){
+              FillHistogram(Form("ggmat100ms_%s",Na32->GetName()), 4000,0,4000,gamEm, 4000,0,4000,gamEn);
+              FillHistogram(Form("ggmat100ms_%s",Na32->GetName()), 4000,0,4000,gamEn, 4000,0,4000,gamEm);
+            }
+          }//end ggmat
+        }// single gamma loop in one decay event end
+        // Addback//
+        std::map<int, Clover>::iterator it1;
+        for(it1=clmap.begin();it1!=clmap.end();it1++){
+          double adde1 = 0;
+          for(int cc1=0;cc1<it1->second.Size();cc1++){
+            adde1 += it1->second.fXtal[cc1].GetEnergy();
+            for(int cc2=0;cc2<it1->second.Size();cc2++){
+              int num1 = (it1->second.fXtal[cc1].GetNumber()-208)%4;
+              int num2 = (it1->second.fXtal[cc2].GetNumber()-208)%4;
+              adde1 += (it1->second.fXtal[cc2].GetEnergy())*xtalmat[it1->first][num1][num2];
+            }
+          }
+          it1->second.SetAddE(adde1);
+          if(decaytime<500){ 
+            FillHistogram(Form("dt_addback_%s",Na32->GetName()), 500,0,500,decaytime, 4000,0,4000,it1->second.AddbackE());
+          }
+          std::map<int, Clover>::iterator it2;
+          for(it2=next(it1,1);it2!=clmap.end();it2++){ //addback matrix
+            if(decaytime<=50){
+              FillHistogram(Form("adbmat50ms_%s",Na32->GetName()), 4000,0,4000,it1->second.AddbackE(), 4000,0,4000,it2->second.AddbackE());
+              FillHistogram(Form("adbmat50ms_%s",Na32->GetName()), 4000,0,4000,it2->second.AddbackE(), 4000,0,4000,it1->second.AddbackE());
+            }
+            if(decaytime<=70){
+              FillHistogram(Form("adbmat70ms_%s",Na32->GetName()), 4000,0,4000,it1->second.AddbackE(), 4000,0,4000,it2->second.AddbackE());
+              FillHistogram(Form("adbmat70ms_%s",Na32->GetName()), 4000,0,4000,it2->second.AddbackE(), 4000,0,4000,it1->second.AddbackE());
+            }
+            if(decaytime<=100){
+              FillHistogram(Form("adbmat710ms_%s",Na32->GetName()), 4000,0,4000,it1->second.AddbackE(), 4000,0,4000,it2->second.AddbackE());
+              FillHistogram(Form("adbmat100ms_%s",Na32->GetName()), 4000,0,4000,it2->second.AddbackE(), 4000,0,4000,it1->second.AddbackE());
+            }
+          } //end addback matrix  
+        }///addback end
+      }// Decay event loop end
+    }// PID Gate end
+    if((x%5000)==0) {
+      printf("on entry %lu / %lu   \r",x,entries);
+      fflush(stdout);
+    }
+
+
+  }
+  printf("   on entry %lu / %lu   \n",x,entries);
+  SaveHistograms(Form("beta_prompt_op%s.root",runnum.c_str()));
+
+
+}
 
 
 
@@ -78,7 +607,7 @@ std::map<int,double[4][4]> Histogram::ReadMat(std::string filename){
 
 void Histogram::EventSort(){
   std::string runnum = GetRunNumber(gROOT->GetListOfFiles()->At(0)->GetName());
-  std::map<int,double[4][4]> xtalmat = ReadMat();
+  //std::map<int,double[4][4]> xtalmat = ReadMat();
 
   BCSEvent *fevent = new BCSEvent;
   gChain->SetBranchAddress("BCSEvent", &fevent);
@@ -87,119 +616,67 @@ void Histogram::EventSort(){
   long n = gChain->GetEntries();
   //n = 1e5;
   long x = 0;
-  int num = 0;
-  int numy = 0;
-  int numz = 0;
-  double adde = 0;
 
   for(x=0;x<n;x++){
     gChain->GetEntry(x);
-    int pin1c = 0;
-    if(fevent->SSSD().size()>0){
-      double sssdEmax = fevent->SSSD().at(0).GetEnergy();
-      double sssdEmin = fevent->SSSD().at(0).GetEnergy();
-      for(auto &it:fevent->SSSD()){
-        if(it.GetEnergy()>sssdEmax) sssdEmax = it.GetEnergy();
-        if(it.GetEnergy()<sssdEmin) sssdEmin = it.GetEnergy();
+    if(fevent->Pin1E()>0){
+      FillHistogram("pid",2e3,0,2e4,fevent->I2S(),4e3,0,8e3,fevent->Pin1E());
+      if(fevent->LGFSize()>0 || fevent->LGBSize()>0){
+        FillHistogram("pid_dssdlo",2e3,0,2e4,fevent->I2S(),4e3,0,8e3,fevent->Pin1E());
+      }else{ // no dssd lo
+        if(fevent->HGFSize()>0 || fevent->HGBSize()>0){
+          FillHistogram("pid_dssdhi",2e3,0,2e4,fevent->I2S(),4e3,0,8e3,fevent->Pin1E());
+        }else{ // no dssd hi
+          FillHistogram("pid_nodssd",2e3,0,2e4,fevent->I2S(),4e3,0,8e3,fevent->Pin1E());
+        }
       }
-      FillHistogram("eventsize_sssdEmax", 200,0,200,fevent->Size(), 2e3,0,2e4,sssdEmax);
-      FillHistogram("eventsize_sssdEmin", 200,0,200,fevent->Size(), 2e3,0,2e4,sssdEmin);
-      FillHistogram("Pin1E_sssdEmax",     2e3,0,2e4,fevent->Pin1E(), 2e3,0,2e4,sssdEmax);
-      FillHistogram("Pin1E_sssdEmin",     2e3,0,2e4,fevent->Pin1E(), 2e3,0,2e4,sssdEmin);
-      FillHistogram("TOF_sssdEmax",     2e3,0,2e4,fevent->I2S(), 2e3,0,2e4,sssdEmax);
-      FillHistogram("TOF_sssdEmin",     2e3,0,2e4,fevent->I2S(), 2e3,0,2e4,sssdEmin);
+    }
 
-    }
-    FillHistogram("event_size",200,0,200,fevent->Size());
-    FillHistogram("PID", 2e3,0,2e4,fevent->I2S(),5e3,0,20e3,fevent->Pin1E());
-    if(fevent->SSSD().size()==0) FillHistogram("PID_nosssd", 2e3,0,2e4,fevent->I2S(),5e3,0,20e3,fevent->Pin1E()); //no SSSD
-    else FillHistogram("PID_hassssd", 2e3,0,2e4,fevent->I2S(),5e3,0,20e3,fevent->Pin1E());// has SSSD
-    if(fevent->LGFSize()>0 || fevent->LGBSize()>0 || fevent->HGFSize()>0 || fevent->HGBSize()>0){ //hasDSSD
-      FillHistogram("event_size_hasDSSD",200,0,200,fevent->Size());
-      FillHistogram("PID_hasDSSD", 2e3,0,2e4,fevent->I2S(),5e3,0,20e3,fevent->Pin1E());
-      //hasDSSD + no SSSD
-      if(fevent->SSSD().size()==0) FillHistogram("PID_hasDSSD_nosssd", 2e3,0,2e4,fevent->I2S(),5e3,0,20e3,fevent->Pin1E()); 
-      else FillHistogram("PID_hasDSSD_hassssd", 2e3,0,2e4,fevent->I2S(),5e3,0,20e3,fevent->Pin1E()); // hasDSSD + has SSSD
-      if(fevent->Pin1E()>0){ //hasDSSD + Pin1>0
-        if(fevent->LGFSize()>0 || fevent->LGBSize()>0){
-          double dtime = 0;
-          if(fevent->LGFSize()>0){
-            dtime = fevent->LGFMax().GetTimestamp() - fevent->Pin1T();  
-          }else{
-            dtime = fevent->LGBMax().GetTimestamp() - fevent->Pin1T();  
-          }
-          dtime = dtime/1000.;
-          FillHistogram("timedif_dssdlopin1", 400,-20,20,dtime, 5e3,0,2e4,fevent->Pin1E());
-        }
-      }
-    }else{//noDSSD
-      FillHistogram("event_size_noDSSD",200,0,200,fevent->Size());
-      FillHistogram("PID_noDSSD", 2e3,0,2e4,fevent->I2S(),5e3,0,20e3,fevent->Pin1E());
-      //noDSSD + no SSSD
-      if(fevent->SSSD().size()==0) FillHistogram("PID_noDSSD_nosssd", 2e3,0,2e4,fevent->I2S(),5e3,0,20e3,fevent->Pin1E());
-      else FillHistogram("PID_noDSSD_hassssd", 2e3,0,2e4,fevent->I2S(),5e3,0,20e3,fevent->Pin1E()); //noDSSD + has SSSD
-      if(fevent->HPGe().size()==0 && fevent->LaBr().size()==0){ //no DSSD + not Clover Only
-        for(auto &it:fevent->fHits){
-          FillHistogram("summary_mystery",2e3,0,2e4,it.GetEnergy(), 300,0,300,it.GetNumber());
-          FillHistogram("sumsize_mystery",200,0,200,fevent->Size(), 300,0,300,it.GetNumber());
-        }
-      }
-    }
     for(auto &it:fevent->fHits){
-      FillHistogram("summary", 2000,0,20000,it.GetEnergy(),300,0,300,it.GetNumber());
-      FillHistogram("sum_size", 200,0,200,fevent->Size(), 300,0,300,it.GetNumber());
-      if(fevent->LGFSize()>0 || fevent->LGBSize()>0 || fevent->HGFSize()>0 || fevent->HGBSize()>0){
-        if(fevent->Pin1E()>0 && (fevent->LGFSize()>0 || fevent->LGBSize()>0) && it.GetNumber()==181) pin1c++;
-        FillHistogram("summary_hasDSSD", 2000,0,20000,it.GetEnergy(),300,0,300,it.GetNumber());
-        FillHistogram("sum_size_hasDSSD", 200,0,200,fevent->Size(), 300,0,300,it.GetNumber());
-      }else{
-        FillHistogram("summary_noDSSD", 2000,0,20000,it.GetEnergy(),300,0,300,it.GetNumber());
-        FillHistogram("sum_size_noDSSD", 200,0,200,fevent->Size(), 300,0,300,it.GetNumber());
+      FillHistogram("sum", 20e3,0,40e3,it.GetEnergy(), 300,0,300,it.GetNumber());
+      FillHistogram("sumsize", 100,0,100,fevent->Size(), 300,0,300,it.GetNumber());
+      if(fevent->Pin1E()>0){
+        FillHistogram("sum_pin1", 20e3,0,40e3,it.GetEnergy(), 300,0,300,it.GetNumber());
+        FillHistogram("sumsize_pin1", 100,0,100,fevent->Size(), 300,0,300,it.GetNumber());
+        if(fevent->LGFSize()>0 || fevent->LGBSize()>0) {
+          FillHistogram("sum_pin1_dssdlo", 20e3,0,40e3,it.GetEnergy(), 300,0,300,it.GetNumber());
+          FillHistogram("sumsize_pin1_dssdlo", 100,0,100,fevent->Size(), 300,0,300,it.GetNumber());
+        }else{ // no dssd lo
+          if(fevent->HGFSize()>0 || fevent->HGBSize()>0){
+            FillHistogram("sum_pin1_dssdhi", 20e3,0,40e3,it.GetEnergy(), 300,0,300,it.GetNumber());
+            FillHistogram("sumsize_pin1_dssdhi", 100,0,100,fevent->Size(), 300,0,300,it.GetNumber());
+          }else{ // no dssd hi
+            FillHistogram("sum_pin1_nodssd", 20e3,0,40e3,it.GetEnergy(), 300,0,300,it.GetNumber());
+            FillHistogram("sumsize_pin1_nodssd", 100,0,100,fevent->Size(), 300,0,300,it.GetNumber());
+          }
+        }
+      }else{ // no pin1
+        if(fevent->LGFSize()>0 || fevent->LGBSize()>0){
+          FillHistogram("sum_nopin1_dssdlo", 20e3,0,40e3,it.GetEnergy(), 300,0,300,it.GetNumber());
+          FillHistogram("sumsize_nopin1_nodssdlo", 100,0,100,fevent->Size(), 300,0,300,it.GetNumber());
+        }else{ // no dssd lo
+          if(fevent->HGFSize()>0 || fevent->HGBSize()>0){
+            FillHistogram("sum_dec", 20e3,0,40e3,it.GetEnergy(), 300,0,300,it.GetNumber());
+            FillHistogram("sumsize_dec", 100,0,100,fevent->Size(), 300,0,300,it.GetNumber());
+          }else{ // no dssd hi
+            if(fevent->HPGeSize()>0 || fevent->LaBr().size()>0){
+              FillHistogram("sum_gamma", 20e3,0,40e3,it.GetEnergy(), 300,0,300,it.GetNumber());
+              FillHistogram("sumsize_gamma", 100,0,100,fevent->Size(), 300,0,300,it.GetNumber());
+            }else{ // no gamma
+              FillHistogram("sum_sssdonly", 20e3,0,40e3,it.GetEnergy(), 300,0,300,it.GetNumber());
+              FillHistogram("sumsize_sssdonly", 100,0,100,fevent->Size(), 300,0,300,it.GetNumber());
+            }
+          }
+        }
       }
       for(auto &it1:fevent->fHits){
-        double dt = it.GetTimestamp() - it1.GetTimestamp();
-        dt = dt/1000.;
-        FillHistogram("timedif_hits",400,-20,20,dt);
-        if(fevent->LGFSize()>0 || fevent->LGBSize()>0 || fevent->HGFSize()>0 || fevent->HGBSize()>0){
-          FillHistogram("timedif_hits_hasDSSD",400,-20,20,dt);
-          if(fevent->Pin1E()>0){ //Implant
-            FillHistogram("timedif_Implant",400,-20,20,dt);
-            if(it.GetNumber()>180 && it.GetNumber()<184 && it1.GetNumber()>180 && it1.GetNumber()<184){
-              FillHistogram("timedif_Implant_pin",400,-20,20,dt);
-            }
-            if((it.GetNumber()>39 && it.GetNumber()<80) || (it.GetNumber()>119 && it.GetNumber()<160)){
-              if((it1.GetNumber()>39 && it1.GetNumber()<80) || (it1.GetNumber()>119 && it1.GetNumber()<160)){
-                FillHistogram("timedif_Implant_dssdlo",400,-20,20,dt);
-              }
-            }
-            if((it.GetNumber()>39 && it.GetNumber()<80) || (it.GetNumber()>119 && it.GetNumber()<160) 
-            || (it.GetNumber()>180 && it.GetNumber()<184)){
-              if((it1.GetNumber()>39 && it1.GetNumber()<80) || (it1.GetNumber()>119 && it1.GetNumber()<160) 
-              || (it1.GetNumber()>180 && it1.GetNumber()<184)){
-                FillHistogram("timedif_Implant_pindssdlo",400,-20,20,dt);
-              }
-            }
-            if(it.GetNumber()<160 && it1.GetNumber()<160){
-              FillHistogram("timedif_Implant_dssd",400,-20,20,dt);
-            }
-            if(it.GetNumber()>159 && it.GetNumber()<176 && it1.GetNumber()>159 && it1.GetNumber()<176){
-              FillHistogram("timedif_Implant_sssd",400,-20,20,dt);
-            }
-          }else{//Decay
-            FillHistogram("timedif_Decay",400,-20,20,dt);
-            if(it.GetNumber()<160 && it1.GetNumber()<160){
-              FillHistogram("timedif_Decay_dssd",400,-20,20,dt);
-            }
-            if(it.GetNumber()>159 && it.GetNumber()<176 && it1.GetNumber()>159 && it1.GetNumber()<176){
-              FillHistogram("timedif_Decay_sssd",400,-20,20,dt);
-            }
-          }
-        }else{
-          FillHistogram("timedif_hits_noDSSD",400,-20,20,dt);
-        }
+        FillHistogram("hitpad_pin1",300,0,300,it.GetNumber(), 300,0,300,it1.GetNumber());
+        FillHistogram("hitpad_pin1",300,0,300,it1.GetNumber(), 300,0,300,it.GetNumber());
+        FillHistogram("hitpad_pin1E",300,0,300,it.GetNumber(), 300,0,300,it1.GetNumber(),4e3,0,16e3,fevent->Pin1E());
+        FillHistogram("hitpad_pin1E",300,0,300,it1.GetNumber(), 300,0,300,it.GetNumber(),4e3,0,16e3,fevent->Pin1E());
       }
     }
-    FillHistogram("pin1size_pin1lo",50,0,50,pin1c);
+
 
 
     if((x%50000)==0){
@@ -208,75 +685,10 @@ void Histogram::EventSort(){
     }
   }
   printf("    on entry %lu / %lu   \n",x,n);
-  SaveHistograms(Form("event_outputdo%s.root",runnum.c_str()));
-  //SaveHistograms("eventdo0048-00.root");
+  SaveHistograms(Form("event_op5us_%s.root",runnum.c_str()));
   return;
 
 
-}
-
-void Histogram::EventHitPad(){
-
-  std::string runnum = GetRunNumber(gROOT->GetListOfFiles()->At(0)->GetName());
-
-  std::vector<TCutG* >pidcuts;
-  TFile *mycut1 = TFile::Open("/home/zhu/packages/BCSSort/root_file/cuts/pidcut_48.root");
-  TIter keys1 (mycut1->GetListOfKeys());  
-  while(TKey *key1 = (TKey*)keys1.Next()){
-    pidcuts.push_back((TCutG*)key1->ReadObj());
-  }
-
-  BCSEvent *fevent = new BCSEvent;
-  gChain->SetBranchAddress("BCSEvent", &fevent);
-  TChannel::ReadDetMapFile();
-
-  long nentries = gChain->GetEntries();
-  //nentries = 1e1;
-  long x = 0;
-  double dt = 0;
-
-  for(x=0;x<nentries;x++){
-    gChain->GetEntry(x);
-    if(fevent->Pin1E()>0){
-      if(fevent->LGFSize()>0 && fevent->LGBSize()>0){
-        dt = fevent->LGFMax().GetTimestamp() - fevent->LGBMax().GetTimestamp();
-        dt = dt/1000.;
-        FillHistogram("imp_dt_loFandB", 2000,-10,10,dt);
-      }
-      if(fevent->DSSDloT()>0){
-        dt = fevent->DSSDloT() - fevent->Pin1T();
-        dt = dt/1000.;
-        FillHistogram("imp_pin1E_dt", 2000,-10,10,dt, 2e3,0,2e4,fevent->Pin1E());
-        FillHistogram("imp_TOF_dt", 2000,-10,10,dt, 2e3,0,2e4,fevent->I2S());
-      }
-    }else{ // no Pin1
-      if(fevent->HGFSize()>0 && fevent->HGBSize()>0){
-        dt = fevent->HGFMax().GetTimestamp() - fevent->HGBMax().GetTimestamp();
-        dt = dt/1000.;
-        FillHistogram("dec_dt_hiFandB", 2000,-10,10,dt);
-      }
-      if(fevent->DSSDhiT()>0){
-        for(auto &it:fevent->HPGe()){
-          dt = fevent->DSSDhiT() - it.GetTimestamp();
-          dt = dt/1000.;
-          FillHistogram("dec_HPGeE_dt", 2000,-10,10,dt, 8e3,10,4e3,it.GetEnergy());
-        }
-        for(auto &it:fevent->LaBr()){
-          dt = fevent->DSSDhiT() - it.GetTimestamp();
-          dt = dt/1000.;
-          FillHistogram("dec_LaBrE_dt", 2000,-10,10,dt, 8e3,10,4e3,it.GetEnergy());
-        }
-      }
-    }
-
-    if((x%50000)==0){
-      printf("  on entry %lu / %lu     \r",x,nentries);
-      fflush(stdout);
-    }
-  }
-  printf("    on entry %lu / %lu   \n",x,nentries);
-  SaveHistograms(Form("timedif_eventdo%s.root",runnum.c_str()));
-  return;
 }
 
 
@@ -288,6 +700,7 @@ void Histogram::Process(std::vector<DetHit> vec, std::map<int,double[4][4]> xtal
   int sssd_flag = 0;
   std::vector<DetHit> FL;
   std::vector<DetHit> BL;
+  std::vector<DetHit> LaBr;
   std::vector<DetHit> Ge;
   DetHit pin1_i2s;
   DetHit pin1;
@@ -297,7 +710,7 @@ void Histogram::Process(std::vector<DetHit> vec, std::map<int,double[4][4]> xtal
   int numz = 0;
   for(size_t y=0;y<vec.size();y++){
     FillHistogram("Summary",16e3,0,16e3,vec[y].GetCharge(), 300,0,300,vec[y].GetNumber());
-    FillHistogram("Summary_cal",16e3,0,16e3,vec[y].GetEnergy(), 300,0,300,vec[y].GetNumber());
+    FillHistogram("Summary_cal",16e3,0,8e3,vec[y].GetEnergy(), 300,0,300,vec[y].GetNumber());
     switch(vec[y].GetNumber()){
       case 40 ... 79:  //FL
         FL.push_back(vec[y]);
@@ -325,6 +738,10 @@ void Histogram::Process(std::vector<DetHit> vec, std::map<int,double[4][4]> xtal
         pin1 = vec[y];
         break;
 
+      case 192 ... 207: //LaBr
+        LaBr.push_back(vec[y]);
+        break;
+
       case 208 ... 271: //HPGe
         Ge.push_back(vec[y]);
         break;
@@ -334,44 +751,43 @@ void Histogram::Process(std::vector<DetHit> vec, std::map<int,double[4][4]> xtal
     }
   }
   if(pin1.GetCharge()>100){
-    FillHistogram("PID",2e3,0,2e4,pin1_i2s.GetCharge(),10e3,0,20e3,pin1.GetCharge());
-    FillHistogram("Pin1E",10e3,0,20e3,pin1.GetCharge());
+    //FillHistogram("PID",2e3,0,2e4,pin1_i2s.GetCharge(),10e3,0,20e3,pin1.GetCharge());
+    //FillHistogram("Pin1E",10e3,0,20e3,pin1.GetCharge());
+  }
+  if(LaBr.size()>0){
+    for(auto it1:LaBr){
+      int labr_num = it1.GetNumber()-192;
+      //FillHistogram(Form("LaBr_Cal_%i",labr_num),4000,0,4000,it1.GetEnergy());
+    }
   }
   std::map<int,Clover> clmap; 
   if(Ge.size()>0){
     for(auto it:Ge){
       num = it.GetNumber()-208;
-      if(it.GetEnergy()>10 && it.GetEnergy()<4000){
+      if(it.GetEnergy()>=10 && it.GetEnergy()<=4000){
         int clnum = num/4;
         int xtalnum = num%4;
-        if(clnum == 8) {FillHistogram(Form("single_cl8_%i",xtalnum),8e3,0,4e3,it.GetEnergy());}
-        if(clnum == 9) {FillHistogram(Form("single_cl9_%i",xtalnum),8e3,0,4e3,it.GetEnergy());} 
-        //if(it.GetEnergy()>1450)
-        //printf("channum = [%i][%i] \t Charge = %f \t Energy = %f\n\n",clnum,xtalnum,it.GetCharge(),it.GetEnergy());
         clmap[clnum].Add(it);
-        FillHistogram("single",8000,0,4000,it.GetEnergy());
-        FillHistogram("single_char",8000,0,4000,it.GetCharge());
-        FillHistogram(Form("single_%i",clnum),8000,0,4000,it.GetEnergy());
+        FillHistogram(Form("single_Cal_%i",num),8000,0,4000,it.GetEnergy());
+        //FillHistogram("single_char",8000,0,16000,it.GetCharge());
       }  
     }
 
     std::map<int,Clover>::iterator it;
     for(it=clmap.begin();it!=clmap.end();it++){
-      it->second.SetAddE();
       double adde = 0;
-      for(size_t m=0;m<it->second.Size();m++){
-        adde += it->second.fXtal[m].GetEnergy();
-        for(size_t z=0;z<it->second.Size();z++){
-          numy = (it->second.fXtal[m].GetNumber()-208) % 4;
-          numz = (it->second.fXtal[z].GetNumber()-208) % 4;
-          adde += xtalmat[it->first][numy][numz]*it->second.fXtal[z].GetEnergy();
+      for(int cc1=0;cc1<it->second.Size();cc1++){
+        adde += it->second.fXtal[cc1].GetEnergy();
+        for(int cc2=0;cc2<it->second.Size();cc2++){
+          int num1 = (it->second.fXtal[cc1].GetNumber()-208)%4;
+          int num2 = (it->second.fXtal[cc2].GetNumber()-208)%4;
+          adde += (it->second.fXtal[cc2].GetEnergy())*xtalmat[it->first][num1][num2];
+          //if(it->second.Size()>1)
+          //printf("[%i][%i, %i] = %f\t %f\t %f\n",it->first,num1,num2,xtalmat[it->first][num1][num2],it->second.fXtal[cc2].GetEnergy(),adde);
         }
       }
-      FillHistogram("Addback",8000,0,4000,it->second.AddbackE());
-      FillHistogram(Form("Addback_%i",it->first),8000,0,4000,it->second.AddbackE());
       it->second.SetAddE(adde);
-      FillHistogram("Addback_ct",8000,0,4000,it->second.AddbackE());
-      FillHistogram(Form("Addback_ct_%i",it->first),8000,0,4000,it->second.AddbackE()); 
+      FillHistogram(Form("Addback_%i",it->first),8000,0,4000,it->second.AddbackE());
     }
   }
 }
@@ -397,7 +813,7 @@ void Histogram::ListSort(){
   std::vector<DetHit> vec_hit;
 
   long n = gChain->GetEntries();
-  //n = 1e6;
+  //n = 1e3;
   long x = 0;
   for(x=0;x<n;x++){
     gChain->GetEntry(x);

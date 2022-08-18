@@ -115,9 +115,9 @@ void Implant::Clear(){
     fPIN2T = 0;
     fI2S_I2N = 0;
     fI2S_I2N_T = 0;
-    fDSSDFront.clear();
-    fDSSDBack.clear();
-    fSSSD.clear(); 
+    for(auto &it:fDSSDFront){it.Clear(); fDSSDFront.clear();}
+    for(auto &it:fDSSDBack){it.Clear(); fDSSDBack.clear();}
+    for(auto &it:fSSSD){it.Clear(); fSSSD.clear();}
 }
 
 
@@ -128,23 +128,17 @@ void Implant::SimplePrint() const{
 
 ////////// Print /////////////
 void Implant::Print() const{
-    if(IsGood()) {
-     std::cout << "GOOD IMPLANT:\t"; 
-    } else {
-     std::cout << "BAD IMPLANT:\t"; 
-    }
-    printf("FS = %i BS = %i pin1 @ %f \n",FrontSize(),BackSize(),GetTimestamp());
-    if(IsGood()) {
-      printf("\t(%02i: %02i) @ %.1f \t FHE = %f\t BHE = %f \n",
-              GetPixel().first,
-              GetPixel().second, 
-              //fDSSDFront[0].GetNumber(), 
-              //fDSSDBack[0].GetNumber()-80, 
-              fDSSDFront[0].GetTimestamp(), 
-              fDSSDFront[0].GetCharge(), 
-              fDSSDBack[0].GetCharge()); 
-    } else {
-    }
+  printf("FLSize = %i \t BLSize = %i\n", FrontSize(), BackSize());
+  for(int i=0;i<FrontSize();i++){
+    printf("FL[%i]E = %f(%.1f)\t",-fDSSDFront[i].GetNumber()+79,fDSSDFront[i].GetEnergy(),fDSSDFront[i].GetCharge());
+  }
+  printf("\n");
+  for(int j=0;j<BackSize();j++){
+    printf("BL[%i]E = %f(%.1f)\t",-fDSSDBack[j].GetNumber()+159,fDSSDBack[j].GetEnergy(), fDSSDBack[j].GetCharge());
+  }
+  printf("\n");
+  printf("Implant Pixel = [%i,%i]\n", GetPixel().first, GetPixel().second);
+  return;
 
 }
 
@@ -307,7 +301,7 @@ void Implant::Copy(Implant &lhs) const{
 // ============================================================= //
 // ============================================================= //
 // ============================================================= //
-Decay::Decay(){fImplantTime = -1;}
+Decay::Decay(){fDecayTime = -1;}
 Decay::~Decay(){}
 
 
@@ -348,11 +342,11 @@ void Decay::Set(std::vector<DetHit> *hits){
 
 //// Clear (clear all variables) //////////
 void Decay::Clear(){
-    fDSSDFront.clear();
-    fDSSDBack.clear();
-    fLaBr.clear();
-    fGe.clear();
-    fSSSD.clear(); 
+    for(auto &it:fDSSDFront){it.Clear(); fDSSDFront.clear();}
+    for(auto &it:fDSSDBack){it.Clear(); fDSSDBack.clear();}
+    for(auto &it:fLaBr){it.Clear(); fLaBr.clear();}
+    for(auto &it:fGe){it.Clear(); fGe.clear();}
+    for(auto &it:fSSSD){it.Clear(); fSSSD.clear();}
 }
 
 
@@ -425,8 +419,50 @@ std::pair<int,int> Decay::GetPixel() const{
 }
 
 
-void Decay::SimplePrint(double dt) const{
-    printf("(%02i: %02i) @ %.1f \t FHE = %f\t BHE = %f \t dt(ms) = %.1f\n", fDSSDFront[0].GetNumber(), fDSSDBack[0].GetNumber()-80, fDSSDFront[0].GetTimestamp(), fDSSDFront[0].GetEnergy(), fDSSDBack[0].GetEnergy(), dt*1e-6 );
+void Decay::SimplePrint() const{
+  printf("FHSize = %i \t BHSize = %i \t DecayTime = %fms\n", FrontSize(), BackSize(), fDecayTime);
+  for(int i=0;i<FrontSize();i++){
+    printf("FH[%i]E = %f(%.1f)\t",fDSSDFront[i].GetNumber(),fDSSDFront[i].GetEnergy(),fDSSDFront[i].GetCharge());
+    printf("recal FH[%i]E = %f(%.1f)\t",fDSSDFront[i].GetNumber(),fDSSDFront[i].GetEnergy(true),fDSSDFront[i].GetCharge());
+  }
+  printf("\n");
+  for(int j=0;j<BackSize();j++){
+    printf("BH[%i]E = %f(%.1f)\t",fDSSDBack[j].GetNumber()-80,fDSSDBack[j].GetEnergy(),fDSSDBack[j].GetCharge());
+    printf("recal BH[%i]E = %f(%.1f)\t",fDSSDBack[j].GetNumber()-80,fDSSDBack[j].GetEnergy(true),fDSSDBack[j].GetCharge());
+  }
+  printf("\n");
+  printf("Decay Pixel = [%i,%i]\n", GetPixel().first, GetPixel().second);
+  return;
+}
+
+double Decay::sumEgamma() const{
+  double sumE = 0;
+  for(auto &it:fGe){
+    if(it.GetEnergy()>10 && it.GetEnergy()<4000){
+      sumE += it.GetEnergy();
+    }
+  }
+  return sumE;
+}
+
+//////// Draw (return one TH2D)////////////
+TH2 *Decay::Draw(){
+
+    TH2 *fl= (TH2D*)gDirectory->FindObject("BL_FL_flE");
+    if(!fl){
+        fl = new TH2D("BL_FL_flE","BL_FL_flE", 80,0,80, 40,0,39);
+    }
+    fl->Reset();
+    fl->SetTitle(Form("DSSD@ %lu", DSSDhiT()));
+    for (int i=0;i<BackSize();i++){
+        for (int j=0; j<FrontSize();j++){
+            fl->Fill(fDSSDBack[i].GetNumber()-80, fDSSDFront[j].GetNumber(), fDSSDFront[j].GetEnergy());
+            fl->Fill(fDSSDBack[i].GetNumber()-40, fDSSDFront[j].GetNumber(), fDSSDBack[i].GetEnergy());
+            //bl->Fill(stripb[i].GetNumber()-120, stripf[j].GetNumber()-40);
+        }
+    }
+
+    return fl;   
 }
 
 
@@ -524,6 +560,7 @@ void Beta::Clear(){
     for(int x=0;x<DecaySize();x++){
         fDecay[x].Clear();
     }
+    fDecay.clear();   
 }
 
 void Beta::SimplePrint() const{
@@ -532,10 +569,9 @@ void Beta::SimplePrint() const{
     fImplant.SimplePrint();
     for(size_t x=0;x<DecaySize();x++){
         printf("\t");
-        fDecay[x].SimplePrint(fDecay[x].fDSSDFront[0].GetTimestamp()-fImplant.fDSSDFront[0].GetTimestamp());
+        fDecay[x].SimplePrint();
     }
 }
-
 
 
 

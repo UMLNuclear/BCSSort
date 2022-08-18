@@ -23,9 +23,9 @@ void OpenRootFile(std::string fname) {
   TFile *f= (TFile*)gROOT->GetListOfFiles()->Last();
   //BCSint::Get()->ProcessLine(Form("f = %s;",rfile.c_str()));
   //std::cout << f->GetName() << std::endl;
-  //if(f->FindObjectAny("dchan")) {
+  if(f->FindObjectAny("dchan")) {
   //if(f->FindObjectAny("tree")) {
-  if(f->FindObjectAny("event")) {
+  //if(f->FindObjectAny("event")) {
   //if(f->FindObjectAny("beta")) {
   //if(f->FindObjectAny("implant")) {
   //if(f->FindObjectAny("decay")) {

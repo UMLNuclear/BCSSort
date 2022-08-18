@@ -56,8 +56,8 @@ class Implant{
         void Set(std::vector<DetHit> *hits);
 
         void Print() const; //const(constant fucntion): variables are constant. we cannot change them.
-        void PrintFun(TCutG *mycut=0) const;
         void SimplePrint() const;
+        void PrintFun(TCutG *mycut) const;
         TH2 *Draw(); // return TH2D
 
         int FrontSize() const { return fDSSDFront.size(); }
@@ -113,29 +113,29 @@ class Decay{
         std::vector<DetHit> fLaBr;
         std::vector<DetHit> fGe;
         std::vector<DetHit> fSSSD;
-        double fImplantTime;
+        double fDecayTime;
 
         int FrontSize() const { return fDSSDFront.size(); }
         int BackSize() const { return fDSSDBack.size(); }
         int GeSize() const { return fGe.size(); }
-        void SimplePrint(double) const;
-
-        void SetImplantTime(double impt) {fImplantTime = impt;}//pin1.t - fh.t, unit:ms
-        //bool Stopped() const {return !fSSSD.size(); } 
+        void SimplePrint() const;
+        TH2 *Draw();        
+        
+        // Set this when build correlation!!!!!!!
+        void SetDecayTime(double dect) {fDecayTime = dect;}//DSSDhiT - Pin1T, unit:ns
 
         double GetTimestamp() const {
           if(FrontSize()<1) return -1;
           return fDSSDFront.front().GetTimestamp();
         }
-
-        
+ 
         bool IsPrompt() const;        
         bool IsDelay() const;        
         double DSSDhiT() const;
         DetHit HGFMax() const;
         DetHit HGBMax() const;
         std::pair<int,int> GetPixel() const;   
-        
+        double sumEgamma() const; 
 
         ClassDef(Decay,1);
 };
@@ -196,7 +196,11 @@ class Beta{
     
     void Set(Implant &imp, std::vector<Decay> &dec){fImplant = imp; fDecay = dec;}
 
-    int DecaySize() const { return fDecay.size(); }
+    //int DecaySize() const { return fDecay.size(); }
+    int DecaySize(double t = -1) const {
+          if(t<0) {return fDecay.size();}
+          else{int c=0; for(auto &it:fDecay){if(it.fDecayTime<t) c++;} return c;} 
+        }
     void Clear(); 
     void SimplePrint() const;
     

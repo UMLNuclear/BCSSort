@@ -22,12 +22,12 @@ void BCSOptions::Init() { //TODO make it read these from a file.
   fWriteEventTree   = false;
   fWriteListTree   = false;
   fWriteImpTree   = false;
-  fWriteImpTree   = false;
+  fWriteDecTree   = false;
   
-  //fSortAndQuit = true;
+  fSortAndQuit = true;
   //fWriteTree   = true;
-  //fWriteEventTree   = true;
-  //fWriteListTree   = true;
+  fWriteEventTree   = true;
+  fWriteListTree   = true;
   //fWriteImpTree   = true;
   //fWriteDecTree   = true;
 

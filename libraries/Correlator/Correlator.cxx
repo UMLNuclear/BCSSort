@@ -51,43 +51,24 @@ void Correlator::AddEvent(std::vector<DetHit> *event) {
   bool sssdlo   = false;
   bool clarray  = false;
   double pin1E = -1;
+  double i2s = -1;
+  int cpin1=0;
   for(auto &it : *event) {
-    if(it.GetNumber()==181) {  
-      pin1=true; 
-      pin1E = it.GetEnergy();
-      continue;// change break to continue
-    }else if(it.GetNumber()>=0 && it.GetNumber()<40){ // dssd_hi_front
-      hifront = true; continue;
-    }else if(it.GetNumber()>39 && it.GetNumber()<80){ // dssd_lo_front
-      lofront = true; continue;
-    }else if(it.GetNumber()>79 && it.GetNumber()<120){ // dssd_hi_back
-      hiback = true; continue;
-    }else if(it.GetNumber()>119 && it.GetNumber()<160){ // dssd_lo_back
-      loback = true; continue;
-    }else if(it.GetNumber()>271 && it.GetNumber()<288){ //sssd_lo
-      sssdlo = true; continue;
-    }else if(it.GetNumber()>207 && it.GetNumber()<272){ // clovers
-      clarray = true; continue;
-    }
+    FillHistogram("sum_event_raw", 20000,0,40000,it.GetCharge(), 300,0,300,it.GetNumber());
+    FillHistogram("sum_event_cal", 16000,0,8000,it.GetEnergy(), 300,0,300,it.GetNumber());
+    if(it.GetNumber()==181) {
+      cpin1++;
+      pin1E = it.GetCharge();
+    }else if(it.GetNumber()==177){
+      i2s = it.GetCharge();
+    } 
+  }
+  if(pin1E>0){
+    FillHistogram("counts_pin1",100,0,100,cpin1);
+    if(i2s>0)
+      FillHistogram("pid",2e3,0,2e4,i2s,8e3,0,8e3,pin1E);
   }
 
-  if(hifront || lofront || hiback || loback || pin1){ //hasDSSD 
-    //OutputManager::Get()->FillEvent(event);
-    for(auto &it: *event){
-      FillHistogram("summary_gate", 16000,0,16000,it.GetEnergy(), 300,0,300,it.GetNumber());
-    }
-  }
-  if(hifront || lofront || hiback || loback){ //hasDSSD 
-    if(pin1 && (lofront && loback) && (pin1E>4000 && pin1E<30000)){ //isImplant
-      AddImplant(event);
-    }else if(!pin1 && (hifront && hiback) && !sssdlo){ //isDecay
-      AddDecay(event);
-    }
-  }else{
-    if(!pin1 && clarray){
-      //AddCloverOnly(event);
-    }
-  }  
   fImplant->Clear();
   fDecay->Clear();
   return;
@@ -114,7 +95,7 @@ void Correlator::AddDecay(std::vector<DetHit> *event) {
   fDecay->Set(event);
   pixel pix = Match(fDecay->GetPixel(),fDecay->GetTimestamp());
   if(pix.first<0 || pix.second<0) { return; } //failed to find match.
-  fDecay->SetImplantTime( (fDecay->GetTimestamp() -  fImplantMap[pix]->GetTimestamp())/1e6   );
+  fDecay->SetDecayTime( (fDecay->DSSDhiT() -  fImplantMap[pix]->GetTimestamp())   );
   fDecayMap[pix]->push_back(*fDecay);
   return;
 }
@@ -127,7 +108,7 @@ void Correlator::AddCloverOnly(std::vector<DetHit> *event){
     if(it.second->IsGood()){
       double isomerTDiff = cloverTime - it.second->GetTimestamp();
       if(isomerTDiff>0 && isomerTDiff<isomerTimeCut){
-        fDecay->SetImplantTime(isomerTDiff/1e6); 
+        fDecay->SetDecayTime(isomerTDiff); 
         fDecayMap[it.first]->push_back(*fDecay);  
       } 
     }
@@ -209,7 +190,7 @@ void Correlator::FlushPixel(pixel pix, bool histogram) {
     for(size_t m=0;m<vdec->size();m++){
       //if(vdec->at(m).FrontSize()==0) continue;
       for(auto &it:vdec->at(m).fGe){
-        FillHistogram("single_imptime", 3000,0,1500,vdec->at(m).fImplantTime,8000,0,4000,it.GetEnergy());
+        FillHistogram("single_imptime", 3000,0,1500,vdec->at(m).fDecayTime,8000,0,4000,it.GetEnergy());
       }
     }
 

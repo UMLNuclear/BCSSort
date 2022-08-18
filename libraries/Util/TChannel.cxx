@@ -388,7 +388,8 @@ double TChannel::Calibrate(int value, const std::vector<double>& coeff) {
   if(value==0){
     return 0;
   }
-
+  //printf("I am here\n");
+  fflush(stdout);
   double dvalue = value + gRandom->Uniform();
   return Calibrate(dvalue, coeff);
 }
@@ -397,6 +398,7 @@ double TChannel::Calibrate(double value, const std::vector<double>& coeff) {
   if(coeff.size() == 0){
     return value;
   }
+  value = value + gRandom->Uniform();
 
   // Evaluate the polynomial using Horner's Method
   double cal_value = 0;

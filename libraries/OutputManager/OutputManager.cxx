@@ -150,10 +150,10 @@ void OutputManager::FillDec(std::vector<DetHit> *hits){
 void OutputManager::Close() {
   //if(!BCSOptions::Get()->WriteTree()) return;
   if(BCSOptions::Get()->WriteTree()) {
-    if(!fFile || !fListTree) return;
+    if(!fFile || !fTree) return;
     TDirectory * current = gDirectory; 
     fFile->cd();
-    fListTree->Write();
+    fTree->Write();
     fFile->Close();
     current->cd();
   }

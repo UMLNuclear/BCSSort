@@ -5,13 +5,14 @@
 #include <globals.h>
 #include <numeric>
 
-DetHit::DetHit() {  }//create, constructor
+DetHit::DetHit() { energy = sqrt(-1);  }//create, constructor
 
 DetHit::DetHit(const DetHit &rhs) {
     timestamp = rhs.GetTimestamp();
     charge    = rhs.GetCharge();
     number    = rhs.GetNumber();
     address   = rhs.GetAddress();
+    energy    = rhs.GetEnergy();
 }
 
 
@@ -36,15 +37,27 @@ void DetHit::print(){
 
 
 
-double DetHit::GetEnergy() const {
+double DetHit::GetEnergy(bool recal) const {
     TChannel *c = TChannel::Get(address);
     //cout << c->GetNumber() <<"\t" 
     if(!c) return -1;
     //if(abs((GetNumber()-240)<32)) {
     //  std::cout << GetNumber() <<"\t" << GetCharge() << "\t" << GetEnergy() << std::endl;
     //}
+    if(energy!=energy || recal) 
+      energy = c->CalEnergy(charge); 
 
-    return c->CalEnergy(charge); 
+    return energy; 
+}
+
+
+
+void DetHit::Clear(){
+    timestamp = -1;
+    charge    = -1;
+    number    = -1;
+    address   = -1;
+    energy    = sqrt(-1);
 }
 
 
@@ -387,7 +400,13 @@ TH2D *BCSEvent::DrawSSSD(Option_t *opt) const {
 }
 
 
-
+//===================================================//
+void BCSEvent::Print(){
+  std::cout<<"number"<<"\t"<<"energy"<<"\t"<<"time"<<std::endl;
+  for(auto &it:fHits){
+    std::cout<<it.GetNumber()<<"\t"<<it.GetEnergy()<<"\t"<<it.GetTimestamp()<<std::endl;
+  }
+}
 
 
 

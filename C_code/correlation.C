@@ -10,6 +10,7 @@
 
 #include<TChannel.h>
 #include<Implant.h>
+#include<TOFCorrection.h>
 #include<globals.h>
 #include<util.h>
 
@@ -43,18 +44,33 @@ void Initial(){
 
 //==========correlation=========//
 void correlation(){
-
+  int runnum = 1040;
+  std::vector<double> tofpara = TOFCorrection::Get()->ReadFile(runnum, "/home/zhu/packages/BCSSort/config/TOF/TOF_beta_offset.txt");
+  if(tofpara.empty()){
+    printf("run%i.root file doesn't have tof parameters\n", runnum);
+    return;
+  } 
   std::vector<TCutG *> cut1;
-  TFile *mycut1 = TFile::Open("root_file/cuts/pidcut_48.root"); // PID
+  TFile *mycut1 = TFile::Open("/home/zhu/packages/BCSSort/root_file/cut/pidcut104.root"); // PID
   TIter keys1 (mycut1->GetListOfKeys());
   while(TKey *key1 = (TKey*)keys1.Next()) {
     cut1.push_back((TCutG*)key1->ReadObj());
   }
 
+  std::vector<TCutG*> veccut;
+  TFile *cutf = TFile::Open("/home/zhu/packages/BCSSort/root_file/cut/prompt_Imp104.root");
+  TCutG *tof_dt = (TCutG *)cutf->Get("tof_dt");
+  TCutG *pin1E_dt = (TCutG *)cutf->Get("pin1E_dt");
+  veccut.push_back(tof_dt); // TOF vs timedif for 44S;
+  veccut.push_back(pin1E_dt); // Pin1E vs timedif for S;
+
   TChannel::ReadDetMapFile();
-  chimp->Add("run0048/10us/no160175_Esssd600/imp_good/implant0048-0*");
-  //chdec->Add("run0048/10us/no160175_Esssd600/dec_prompt/decay0048-0*");
-  chdec->Add("run0048/10us/no160175_Esssd600/dec_delay/decay0048-0*");
+  chimp->Add(Form("data/5us_tofcor/implant/imp_good/implant%i*",runnum));
+  chdec->Add(Form("data/5us_tofcor/decay/dec_prompt/decay%i*",runnum));
+  //chdec->Add(Form("data/5us_tofcor/sample/decay/dec_delay/decay%i*",runnum));
+  
+  TFile *newf = new TFile(Form("beta_good_prompt%i.root",runnum),"recreate");
+  //TFile *newf = new TFile(Form("beta_good_delay%i.root",runnum),"recreate");
 
   chimp->SetBranchAddress("Implant", &fimp);
   chdec->SetBranchAddress("Decay", &fdec);
@@ -63,9 +79,8 @@ void correlation(){
   ndec = chdec->GetEntries();
   //nimp = 5e3;
   //double minT = -1;
+  double dt;
 
-  //TFile *newf = new TFile("beta_prompt0048.root","recreate");
-  TFile *newf = new TFile("beta_delay0048.root","recreate");
   TTree *tree = new TTree("beta","beta tree");
   Beta fbeta;
   tree->Branch("Beta",&fbeta);
@@ -74,8 +89,10 @@ void correlation(){
 
   for(ximp=0;ximp<nimp;ximp++){
     chimp->GetEntry(ximp);
+    fimp->fI2S = fimp->fI2S + tofpara[0];
     pixel piximp = fimp->GetPixel();
     if(piximp.first<0 ||  piximp.second<0) continue;
+    if(piximp.first>39 ||  piximp.second>39) continue;
     if(fImpTime[piximp]>0){ //that pixel is implanted;
       while(xdec<ndec){
         chdec->GetEntry(xdec++);
@@ -86,15 +103,25 @@ void correlation(){
           Implant *current = fImpMap[piximp];
           std::vector<Decay> *vdec = fDecMap[piximp];
           fbeta.Set(*current, *vdec);
-          tree->Fill();
-          //if(piximp.first==12 && piximp.second==15) printf("Imp[%lu] at %lu \n", ximp, (size_t)fImpMap[piximp]->DSSDloT());
-          fbeta.Clear();
+          dt = fbeta.fImplant.DSSDloT() - fbeta.fImplant.fPIN1T;
+          dt = dt/1000.; //us
+          if(veccut[0]->IsInside(dt, fbeta.fImplant.fI2S) && veccut[1]->IsInside(dt,fbeta.fImplant.fPIN1E)){
+            tree->Fill();
+          }
           current->Clear();
           vdec->clear();
           break;
         }
-        if(fdec->DSSDhiT() < fImpTime[pixdec]) continue; // dceay must come later than implant;
-        fDecMap[pixdec]->push_back(*fdec);
+        for(int i=pixdec.first-1;i<=pixdec.first+1;i++){
+          if(i<0 || i>39) continue;
+          for(int j=pixdec.second-1;j<=pixdec.second+1;j++){
+            if(j<0 || j>39) continue;
+            pixel temp = std::make_pair(i,j);
+            if(fImpTime[temp]>0 && fImpTime[temp]<fdec->DSSDhiT()){
+              fDecMap[temp]->push_back(*fdec);
+            }
+          }
+        }
       }
     }
     fimp->Copy(*fImpMap[piximp]);
@@ -113,7 +140,11 @@ void correlation(){
       Implant *current = fImpMap[pix];
       std::vector<Decay> *vdec = fDecMap[pix];
       fbeta.Set(*current, *vdec);
-      tree->Fill();
+      dt = fbeta.fImplant.DSSDloT() - fbeta.fImplant.fPIN1T;
+      dt = dt/1000.; //us
+      if(veccut[0]->IsInside(dt, fbeta.fImplant.fI2S) && veccut[1]->IsInside(dt,fbeta.fImplant.fPIN1E)){
+        tree->Fill();
+      }
       fbeta.Clear();
       current->Clear();
       vdec->clear();

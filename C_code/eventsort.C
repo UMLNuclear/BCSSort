@@ -20,76 +20,64 @@
 #include<map>
 
 
-std::map<pixel, double> fChargeMap; //pix = <FL#, BL#>, DetHit = pin1
-std::map<pixel, double> fTimeMap; //pix = <FL#, BL#>, DetHit = pin1
-
-
-std::pair<int, int> GetPixel(std::vector<DetHit> LGF, std::vector<DetHit> LGB){
-  int indexf = (-LGF[0].GetNumber()+80)-1;
-  int indexb = (-LGB[0].GetNumber()+160)-1;
-  double tempE = LGF[0].GetEnergy();
-  for(int z=1;z<LGF.size();z++){
-    if(tempE<LGF[z].GetEnergy()){
-      tempE = LGF[z].GetEnergy();
-      indexf = (-LGF[z].GetNumber()+80)-1;   // from 0~39: FL1->0; FL40->39
-    }
-  }
-  tempE = LGB[0].GetEnergy();
-  for(int z=1;z<LGB.size();z++){
-    if(tempE<LGB[z].GetEnergy()){
-      tempE = LGB[z].GetEnergy();
-      indexb = (-LGB[z].GetNumber()+160)-1;
-    }
-  }
-  return std::make_pair(indexf,indexb);
-}
 
 
 
 
 void eventsort(){
 
-  //std::string runnum = GetRunNumber(gChain->GetCurrentFile()->GetName());
-
-  std::vector<TCutG* >pidcuts;
-  TFile *mycut1 = TFile::Open("/home/zhu/packages/BCSSort/root_file/cuts/pidcut_48.root");
-  TIter keys1 (mycut1->GetListOfKeys());  
-  while(TKey *key1 = (TKey*)keys1.Next()){
-    pidcuts.push_back((TCutG*)key1->ReadObj());
-  }
-
-
-  for(int m=0;m<40;m++){
-    for(int n=n;n<40;n++){
-      pixel pix = std::make_pair(m,n);
-      fChargeMap[pix] = -1;
-      fTimeMap[pix] = -1;
-    }
-  }
-
-
+  int runnum = 1042;
+  TChain *cheve = new TChain("event");
   BCSEvent *fevent = new BCSEvent;
-  gChain->SetBranchAddress("BCSEvent", &fevent);
+  cheve->Add(Form("data/5us_tofcor/event/event%i*",runnum));
+  cheve->SetBranchAddress("BCSEvent", &fevent);
+
   TChannel::ReadDetMapFile();
+  TFile *mycut1 = TFile::Open("/home/zhu/packages/BCSSort/root_file/cut/pid_Na32cut.root");
+  TCutG *Na32 = (TCutG *)mycut1->Get("Na32");
+  TFile *cutf1 = TFile::Open("/home/zhu/packages/BCSSort/root_file/cut/pid_cut.root");
+  TCutG *Ne = (TCutG *)cutf1->Get("Ne");
 
-  long nentries = gChain->GetEntries();
-  nentries = 1e5;
+
+  long n = cheve->GetEntries();
   long x = 0;
-  int pixf, pixb;
-  double bmaxE, fmaxE;
-  size_t m,n,c;
+  double dt;
 
-  for(x=0;x<nentries;x++){
-    gChain->GetEntry(x);
-    
+  for(x=0;x<n;x++){
+    cheve->GetEntry(x);
+    if(fevent->Pin1E()>0){
+      if(fevent->LGFSize()>1){
+        DetHit temp = fevent->LGFMax();
+        for(int i=0;i<fevent->LGFSize();i++){
+          if(temp.GetTimestamp()==fevent->LGF().at(i).GetTimestamp()) continue;
+          if(fabs(temp.GetEnergy()-fevent->LGF().at(i).GetEnergy())<2){
+            dt = fabs(temp.GetTimestamp()-fevent->LGF().at(i).GetTimestamp());
+            dt=dt/1000.;//unit: us
+            FillHistogram("LGF_dt_maxE",1000,0,10,dt);
+          }
+        }
+      }
+      if(fevent->LGBSize()>1){
+        DetHit temp = fevent->LGBMax();
+        for(int i=0;i<fevent->LGBSize();i++){
+          if(temp.GetTimestamp()==fevent->LGB().at(i).GetTimestamp()) continue;
+          if(fabs(temp.GetEnergy()-fevent->LGB().at(i).GetEnergy())<2){
+            dt = fabs(temp.GetTimestamp()-fevent->LGB().at(i).GetTimestamp());
+            dt=dt/1000.;//unit: us
+            FillHistogram("LGB_dt_maxE",1000,0,10,dt);
+          }
+        }
+      }
+    }
+
 
     if((x%50000)==0){
-      printf("  on entry %lu / %lu     \r",x,nentries);
+      printf("  on entry %lu / %lu     \r",x,n);
       fflush(stdout);
     }
   }
-  printf("    on entry %lu / %lu   \n",x,nentries);
-  //SaveHistograms(Form("eventdo%s.root",runnum.c_str()));
-  SaveHistograms("hitpad_eventdo0048.root");
+  printf("    on entry %lu / %lu   \n",x,n);
+  SaveHistograms(Form("eventop_%i.root",runnum));
   return;
+
 }

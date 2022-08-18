@@ -30,9 +30,11 @@ int main(int argc, char **argv){
   }
 
   if(BCSOptions::Get()->SortAndQuit()==true) {
-    //bcs->DoSort(); // organize data from run.file to correlated beta.file
-    bcs->EventSort();
-    //Histogram::Get()->EventHitPad();
+    bcs->DoSort();
+    //bcs->Correlation(); // organize data from run.file to correlated beta.file
+    //bcs->QuickBetaSort();
+    //Histogram::Get()->BetaSort();
+    //Histogram::Get()->ListSort();
     bcs->Terminate(0);
   } else {
     bcs->Run(false);

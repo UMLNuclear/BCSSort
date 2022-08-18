@@ -36,10 +36,9 @@ TOFCorrection::TOFCorrection(){}
 
 TOFCorrection::~TOFCorrection(){}
 
-
 //========================= Read File ==========================//
 std::vector<double> TOFCorrection::ReadFile(int num, std::string filename){
-  printf("Read File TOFParameters/n");
+  printf("Read File TOFParameters from runnum = %i\n", num);
   std::vector<double> tofpara; 
   std::ifstream infile;
   std::string line;
@@ -95,6 +94,11 @@ void TOFCorrection::Fluctuation(){
       pin1_i2n = fevent->PIN1_I2N();
       FillHistogram(Form("pin1_i2n%s",num.c_str()), 3800,0,3800,runtime, 1600,0,32000,pin1_i2n);
     }
+    if(fevent->I2S()>0){
+      runtime = (fevent->Pin1T()-first_time)/1e9;
+      tof = fevent->I2S();
+      FillHistogram(Form("tof%s",num.c_str()), 3800,0,3800,runtime, 1600,0,32000,tof);
+    }
     if((x%50000)==0){
       printf("  on entry %lu / %lu \r",x,n);
       fflush(stdout);
@@ -102,7 +106,7 @@ void TOFCorrection::Fluctuation(){
   }
 
   printf("  on entry %lu / %lu  \n",x,n);
-  SaveHistograms(Form("i2n%s.root", num.c_str()));
+  SaveHistograms(Form("tof%s.root", num.c_str()));
 }
 
 //========================== Correct TOF by old TH2D ===================//

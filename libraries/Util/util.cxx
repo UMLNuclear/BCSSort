@@ -19,6 +19,7 @@
 #include <TFile.h>
 #include <TH1.h>
 #include <TH2.h>
+#include <TH3.h>
 
 
 TList *gList = new TList;
@@ -65,14 +66,14 @@ void ProgressUpdate(long x, long n, bool end) {
 
 void FillHistogram(std::string hname,TCutG *cut1, TCutG *cut2, int xbins, double xlow, double xhigh, double xvalue,
                                                                 int ybins, double ylow, double yhigh, double yvalue, 
-                                                                double zvalue) {
+                                                                int zbins, double zlow, double zhigh, double zvalue) {
   std::string newname = Form("%s_%s_%s",hname.c_str(),cut1->GetName(),cut2->GetName());
   FillHistogram(newname,xbins,xlow,xhigh,xvalue, ybins,ylow,yhigh,yvalue,zvalue);
 }
 
 void FillHistogram(std::string hname,TCutG *cut,int xbins, double xlow, double xhigh, double xvalue,
                                                 int ybins, double ylow, double yhigh, double yvalue, 
-                                                double zvalue) {
+                                                int zbins, double zlow, double zhigh, double zvalue) {
   std::string newname = Form("%s_%s",hname.c_str(),cut->GetName());
   FillHistogram(newname,xbins,xlow,xhigh,xvalue, ybins,ylow,yhigh,yvalue,zvalue);
 }
@@ -80,7 +81,7 @@ void FillHistogram(std::string hname,TCutG *cut,int xbins, double xlow, double x
 
 void FillHistogram(std::string hname,int xbins, double xlow, double xhigh, double xvalue,
                                       int ybins, double ylow, double yhigh, double yvalue, 
-                                      double zvalue) {
+                                      int zbins, double zlow, double zhigh, double zvalue) {
 
   if(!gList) gList = new TList;
 
@@ -89,22 +90,27 @@ void FillHistogram(std::string hname,int xbins, double xlow, double xhigh, doubl
 
   if(!hist) {
 
-    if(ybins>0) {
+    if(ybins>0 && zbins>0) {
+      hist = new TH3D(hname.c_str(),hname.c_str(),xbins,xlow,xhigh,ybins,ylow,yhigh,zbins,zlow,zhigh);
+    } else if(ybins>0){
       hist = new TH2D(hname.c_str(),hname.c_str(),xbins,xlow,xhigh,ybins,ylow,yhigh);
-    } else {
+    }else {
       hist = new TH1D(hname.c_str(),hname.c_str(),xbins,xlow,xhigh);
     }
     gList->Add(hist);
   }
-  
-  if(ybins>0 && zvalue==zvalue) {
-    ((TH2*)hist)->Fill(xvalue,yvalue,zvalue); // fill with "weighted" zvalue.
-    //hist->SetBinContent(xbin,ybin,zvalue);
-  } else if(ybins>0) {
+ 
+  if(ybins>0 && zbins>0){
+    ((TH3*)hist)->Fill(xvalue, yvalue, zvalue);
+  }else if(ybins>0){
     hist->Fill(xvalue,yvalue);
-  } else {
+    if(zvalue==zvalue){
+      ((TH2*)hist)->Fill(xvalue,yvalue,zvalue); // fill with "weighted" zvalue.
+    }
+  }else{
     hist->Fill(xvalue);
   }
+
 }
 
 void SaveHistograms(std::string fname, Option_t *opt) {
