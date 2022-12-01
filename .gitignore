@@ -3,6 +3,7 @@ CMakeFiles
 cmake_install.cmake
 Makefile
 bin
+NeAnalysis
 G__*
 libBCS*
 .*swp
@@ -14,6 +15,11 @@ libBCS*
 *.txt
 *.out
 *.dat
+*.C
+*cxx
+*png
+*pdf
+junk*
 lib
 .bcsrc
 '
