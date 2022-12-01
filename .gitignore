@@ -4,6 +4,7 @@ cmake_install.cmake
 Makefile
 bin
 NeAnalysis
+CORAnalysis/datafile
 G__*
 libBCS*
 .*swp
