@@ -6,6 +6,12 @@ bin
 NeAnalysis
 CORAnalysis/datafile
 CORAnalysis/data
+graph
+clover_check
+data
+efficiency
+root_file
+spectrum
 G__*
 libBCS*
 .*swp
