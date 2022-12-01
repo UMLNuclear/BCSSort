@@ -16,8 +16,6 @@ libBCS*
 *.txt
 *.out
 *.dat
-*.C
-*cxx
 *png
 *pdf
 junk*
