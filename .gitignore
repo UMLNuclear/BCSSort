@@ -3,15 +3,8 @@ CMakeFiles
 cmake_install.cmake
 Makefile
 bin
-NeAnalysis
-CORAnalysis/datafile
-CORAnalysis/data
-graph
 clover_check
-data
-efficiency
 root_file
-spectrum
 G__*
 libBCS*
 .*swp
@@ -23,8 +16,9 @@ libBCS*
 *.txt
 *.out
 *.dat
-*png
-*pdf
+*.agr
+*.png
+*.pdf
 junk*
 lib
 .bcsrc
