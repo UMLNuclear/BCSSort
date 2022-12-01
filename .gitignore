@@ -5,6 +5,7 @@ Makefile
 bin
 NeAnalysis
 CORAnalysis/datafile
+CORAnalysis/data
 G__*
 libBCS*
 .*swp
